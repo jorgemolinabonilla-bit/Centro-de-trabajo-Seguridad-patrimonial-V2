@@ -32,26 +32,32 @@
 
     function populateStatsFilters() {
         const deptSelect = document.getElementById('stats-filter-dept');
-        if (!deptSelect || deptSelect.options.length > 1) return;
+        if (!deptSelect) return;
 
-        const depts = [
-            "SEGURIDAD", "MANTENIMIENTO", "PRODUCCION", "CALIDAD",
-            "RECURSOS HUMANOS (RRHH)", "ADMINISTRACION", "H&S",
-            "PROYECTOS", "GEOCYCLE", "LOGISTICA", "ALMACEN",
-            "AMBIENTE", "COMUNICACION", "CEPAL", "PROVEEDURIA",
-            "TI", "CETEC", "MINERIA", "SERVICIOS GENERALES"
-        ];
+        if (deptSelect.options.length <= 1) {
+            const depts = [
+                "SEGURIDAD", "MANTENIMIENTO", "PRODUCCION", "CALIDAD",
+                "RECURSOS HUMANOS (RRHH)", "ADMINISTRACION", "H&S",
+                "PROYECTOS", "GEOCYCLE", "LOGISTICA", "ALMACEN",
+                "AMBIENTE", "COMUNICACION", "CEPAL", "PROVEEDURIA",
+                "TI", "CETEC", "MINERIA", "SERVICIOS GENERALES"
+            ];
 
-        depts.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d;
-            opt.textContent = d;
-            deptSelect.appendChild(opt);
-        });
+            depts.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                deptSelect.appendChild(opt);
+            });
+        }
 
         // Add listeners
-        ['stats-filter-start', 'stats-filter-end', 'stats-filter-dept'].forEach(id => {
-            document.getElementById(id)?.addEventListener('change', window.renderStatistics);
+        ['stats-filter-start', 'stats-filter-end', 'stats-filter-dept', 'stats-filter-category'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && !el.getAttribute('data-has-listener')) {
+                el.addEventListener('change', window.renderStatistics);
+                el.setAttribute('data-has-listener', 'true');
+            }
         });
     }
 

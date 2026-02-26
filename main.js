@@ -536,28 +536,48 @@ document.addEventListener('DOMContentLoaded', function () {
     document.head.appendChild(pulseStyle);
 
     window.switchDbTab = function (tabId, btn) {
-        // Toggle tabs
-        document.querySelectorAll('.db-tab-content').forEach(tab => {
-            tab.style.display = tab.id === tabId ? 'block' : 'none';
-        });
-        // Toggle button states
+        document.querySelectorAll('.db-tab-content').forEach(c => c.style.display = 'none');
+        document.getElementById(tabId).style.display = 'block';
         document.querySelectorAll('.db-tab-btn').forEach(b => {
             b.classList.remove('active');
-            b.style.opacity = '0.7';
-            b.style.transform = 'scale(0.95)';
+            b.style.background = b.getAttribute('data-bg') || b.style.background;
         });
         btn.classList.add('active');
-        btn.style.opacity = '1';
-        btn.style.transform = 'scale(1)';
+        if (!btn.getAttribute('data-bg')) btn.setAttribute('data-bg', btn.style.background);
+        btn.style.background = 'var(--primary-teal)';
 
-        // Explicitly render contents for the active tab
         if (tabId === 'keys-tab') renderDbKeys();
+        if (tabId === 'badges-tab') window.updateBadgeDropdown(); // badges rendered inside updateBadgeDropdown
         if (tabId === 'personnel-tab') renderDbPersonnel();
         if (tabId === 'officers-tab') renderDbOfficers();
         if (tabId === 'contact-tab') renderDbContacts();
-        if (tabId === 'badges-tab') renderDbBadges();
         if (tabId === 'cctv-tab') renderDbCCTV();
         if (tabId === 'access-points-tab') renderDbAccessPoints();
+        if (tabId === 'zones-db-tab') renderDbZones();
+    };
+
+    window.renderDbZones = function () {
+        const body = document.getElementById('db-zone-list-body');
+        if (!body) return;
+        const zones = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_security_zones')) || '[]');
+
+        if (zones.length === 0) {
+            body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted);grid-column:1/-1">No hay zonas configuradas.</div>';
+            return;
+        }
+
+        const colors = { 'RED': '#ef4444', 'YELLOW': '#f59e0b', 'GREEN': '#10b981' };
+        body.innerHTML = zones.map((zone, idx) => `
+            <div class="list-row" style="grid-template-columns: 80px 1fr 100px 100px; align-items: center;">
+                <strong style="color:var(--primary-teal)">${zone.id}</strong>
+                <span style="font-size:0.85rem">${zone.name}</span>
+                <div><span class="induction-status" style="background:${colors[zone.state]}20;color:${colors[zone.state]};border:1px solid ${colors[zone.state]}40;font-size:0.65rem">${zone.state}</span></div>
+                <div style="display:flex;gap:4px;">
+                    <button class="btn-salida-corpo" onclick="openEditDbZone(${idx})" style="padding:3px 8px;font-size:0.7rem;background:var(--primary-teal);color:white;border-color:var(--primary-teal);"><i class="fas fa-pen"></i></button>
+                    <button class="btn-salida-corpo" onclick="deleteDbZone(${idx})" style="padding:3px 8px;font-size:0.7rem;background:#ef4444;color:white;border-color:#ef4444"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
     };
 
     // --- THEME MANAGEMENT ---
@@ -722,8 +742,13 @@ document.addEventListener('DOMContentLoaded', function () {
             initializeData('holcim_cctv_inventory', []);
             initializeData('holcim_cctv_reviews', []);
             initializeData('holcim_virtual_rounds', []);
-            initializeData('holcim_calendar_events', []);
-
+            initializeData('holcim_security_zones', [
+                { id: 'Z1', name: 'Zona 1: Perímetro Norte (Cantera)', state: 'RED', coords: [[9.930, -84.092], [9.932, -84.090], [9.932, -84.088], [9.930, -84.088]] },
+                { id: 'Z2', name: 'Zona 2: Planta de Producción y Silos', state: 'RED', coords: [[9.928, -84.092], [9.930, -84.092], [9.930, -84.088], [9.928, -84.088]] },
+                { id: 'Z3', name: 'Zona 3: Almacén y Logística', state: 'RED', coords: [[9.926, -84.092], [9.928, -84.092], [9.928, -84.088], [9.926, -84.088]] },
+                { id: 'Z4', name: 'Zona 4: Oficinas y Acceso Principal', state: 'RED', coords: [[9.926, -84.094], [9.928, -84.094], [9.928, -84.092], [9.926, -84.092]] }
+            ]);
+            initializeData('holcim_security_zone_logs', []);
             updateBadgeDropdown();
             switchView('dashboard');
 
@@ -2115,6 +2140,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (tabId === 'sec-cctv') renderCctvMonitoring();
         if (tabId === 'sec-portones') renderAccessPointsChecklist();
+        if (tabId === 'sec-zones') {
+            initSecurityZonesMap();
+            renderZoneMiniHistory();
+        }
     };
 
     window.renderAccessPointsChecklist = function () {
@@ -2132,32 +2161,80 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        container.innerHTML = items.map(ap => `
-            <div class="card-panel checklist-item" data-ap-id="${ap.id}" style="margin-bottom: 1rem; border: 1px solid #e2e8f0; padding: 1rem;">
-                <div style="display: grid; grid-template-columns: 1fr 200px 200px; gap: 20px; align-items: center;">
+        window.renderAccessPointsChecklist = function () {
+            const container = document.getElementById('portones-checklist-container');
+            if (!container) return;
+            const items = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_access_points')) || '[]');
+            const reviews = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_ap_daily_reviews')) || '[]');
+            const today = new Date().toISOString().split('T')[0];
+
+            if (items.length === 0) {
+                container.innerHTML = `
+                <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                    <i class="fas fa-door-open" style="font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 1rem;"></i>
+                    <p>No hay puntos de acceso registrados.</p>
+                </div>`;
+                return;
+            }
+
+            container.innerHTML = items.map(ap => {
+                const lastReview = reviews.find(r => r.apId === ap.id && r.date === today);
+                const isDone = !!lastReview;
+
+                return `
+            <div class="checklist-item-premium ${isDone ? 'checklist-item-completed' : ''}" data-ap-id="${ap.id}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                            <strong style="display:block; font-size:1rem; color:var(--navy-black);">${ap.name}</strong>
-                            ${ap.lat && ap.lng ? `<button class="btn-salida-corpo" onclick="panToAP(${ap.lat}, ${ap.lng})" style="padding:2px 8px; font-size:0.6rem; background:var(--primary-teal); color:white; border:none;"><i class="fas fa-location-dot"></i> MAPA</button>` : ''}
-                        </div>
-                        <span style="font-size:0.8rem; color:var(--text-muted);">${ap.location}</span>
-                        ${ap.lat && ap.lng ? `<div style="font-size:0.6rem; color:var(--primary-teal); font-family:monospace; margin-top:2px;">Coord: ${ap.lat.toFixed(4)}, ${ap.lng.toFixed(4)}</div>` : ''}
+                        <div class="checklist-title-premium">${ap.name} ${isDone ? '<span class="badge-completed">REVISADO</span>' : ''}</div>
+                        <div class="checklist-subtitle-premium"><i class="fas fa-location-dot"></i> ${ap.location}</div>
                     </div>
-                    <div class="check-group">
-                        <label class="form-label" style="font-size:0.6rem;">Estado Operativo</label>
-                        <select class="check-status" onchange="updateAccessPointsStats()">
-                            <option value="OPERATIVO">OPERATIVO</option>
-                            <option value="FALLA">FALLA</option>
-                            <option value="MANTENIMIENTO">MANTENIMIENTO</option>
+                    ${ap.lat && ap.lng ? `<button class="btn-salida-corpo" onclick="panToAP(${ap.lat}, ${ap.lng})" style="padding:2px 8px; font-size:0.6rem; background:var(--primary-teal); color:white; border:none; margin:0;"><i class="fas fa-location-dot"></i> MAPA</button>` : ''}
+                </div>
+
+                <div class="checklist-grid-premium" style="grid-template-columns: 1fr 1fr;">
+                    <div class="check-group-premium">
+                        <label>Estado Operativo</label>
+                        <select class="check-status" ${isDone ? 'disabled' : ''}>
+                            <option value="OPERATIVO" ${isDone && lastReview.status === 'OPERATIVO' ? 'selected' : ''}>OPERATIVO</option>
+                            <option value="FALLA" ${isDone && lastReview.status === 'FALLA' ? 'selected' : ''}>FALLA</option>
+                            <option value="MANTENIMIENTO" ${isDone && lastReview.status === 'MANTENIMIENTO' ? 'selected' : ''}>MANTENIMIENTO</option>
                         </select>
                     </div>
-                    <div class="check-group">
-                        <label class="form-label" style="font-size:0.6rem;">Observación</label>
-                        <input type="text" class="check-obs" placeholder="Nota..." style="width:100%; font-size:0.8rem;">
-                    </div>
                 </div>
-            </div>
-        `).join('');
+
+                <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: flex-end;">
+                    <div class="check-group-premium">
+                        <label>Observación</label>
+                        <input type="text" class="check-obs" value="${isDone ? lastReview.obs : ''}" placeholder="Escriba novedad..." ${isDone ? 'disabled' : ''} style="width:100%;">
+                    </div>
+                    ${!isDone ? `<button class="btn-submit-action" onclick="saveAccessPointReview('${ap.id}')" style="margin:0; height:36px; padding:0 15px; background:var(--primary-teal);"><i class="fas fa-save"></i> GUARDAR</button>` : ''}
+                </div>
+            </div>`;
+            }).join('');
+
+            updateAccessPointsStats();
+            renderAccessPointsHistory();
+        };
+
+        window.saveAccessPointReview = function (apId) {
+            const item = document.querySelector(`.checklist-item-premium[data-ap-id="${apId}"]`);
+            const reviews = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_ap_daily_reviews')) || '[]');
+            const today = new Date().toISOString().split('T')[0];
+
+            const review = {
+                apId: apId,
+                date: today,
+                status: item.querySelector('.check-status').value,
+                obs: item.querySelector('.check-obs').value,
+                timestamp: new Date().toLocaleString()
+            };
+
+            reviews.push(review);
+            localStorage.setItem(window.getSiteKey('holcim_ap_daily_reviews'), JSON.stringify(reviews));
+
+            showToast('Registro de Punto de Acceso guardado correctamente', 'success');
+            renderAccessPointsChecklist();
+        };
 
         updateAccessPointsStats();
         renderAccessPointsHistory();
@@ -2287,52 +2364,91 @@ document.addEventListener('DOMContentLoaded', function () {
         const container = document.getElementById('cctv-daily-checklist-container');
         if (!container) return;
         const cameras = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_cctv_inventory')) || '[]');
+        const reviews = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_cctv_daily_reviews')) || '[]');
+        const today = new Date().toISOString().split('T')[0];
 
         if (cameras.length === 0) {
-            container.innerHTML = '<div class="alert-info-light">No hay cámaras registradas en el inventario. Genere el inventario primero.</div>';
+            container.innerHTML = '<div class="alert-info-light">No hay cámaras registradas en el inventario.</div>';
             return;
         }
 
-        container.innerHTML = cameras.map(cam => `
-            <div class="card-panel checklist-item" data-cam-id="${cam.id}" style="margin-bottom: 1rem; border: 1px solid #e2e8f0;">
-                <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: start; padding: 1rem;">
+        container.innerHTML = cameras.map(cam => {
+            const lastReview = reviews.find(r => r.camId === cam.id && r.date === today);
+            const isDone = !!lastReview;
+
+            return `
+            <div class="checklist-item-premium ${isDone ? 'checklist-item-completed' : ''}" data-cam-id="${cam.id}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
-                        <strong style="display:block; font-size:1rem; color:var(--navy-black);"># ${cam.type}</strong>
-                        <span style="font-size:0.8rem; color:var(--primary-teal); font-family:monospace;">${cam.ip}</span><br>
-                        <span style="font-size:0.8rem; font-weight:700;">${cam.location}</span>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-                        <div class="check-group">
-                            <label class="form-label" style="font-size:0.6rem;">Visual Video</label>
-                            <select class="check-visual"><option value="OK">OK</option><option value="FALLA">FALLA</option></select>
-                        </div>
-                        <div class="check-group">
-                            <label class="form-label" style="font-size:0.6rem;">Audio 2 Vías</label>
-                            <select class="check-audio"><option value="OK">OK</option><option value="FALLA">FALLA</option><option value="N/A">N/A</option></select>
-                        </div>
-                        <div class="check-group">
-                            <label class="form-label" style="font-size:0.6rem;">Analíticas</label>
-                            <select class="check-analytics"><option value="OK">OK</option><option value="FALLA">FALLA</option></select>
-                        </div>
-                        <div class="check-group">
-                            <label class="form-label" style="font-size:0.6rem;">Alertas Sec.</label>
-                            <select class="check-alerts"><option value="OK">OK</option><option value="FALLA">FALLA</option></select>
-                        </div>
-                        <div class="check-group">
-                            <label class="form-label" style="font-size:0.6rem;">Equip. Monit.</label>
-                            <select class="check-hardware"><option value="OK">OK</option><option value="FALLA">FALLA</option></select>
-                        </div>
+                        <div class="checklist-title-premium"># ${cam.type} ${isDone ? '<span class="badge-completed">REVISADO</span>' : ''}</div>
+                        <div class="checklist-subtitle-premium"><i class="fas fa-network-wired"></i> ${cam.ip} &bull; <i class="fas fa-location-dot"></i> ${cam.location}</div>
                     </div>
                 </div>
-                <div style="padding: 0 1rem 1rem 1rem; display: grid; grid-template-columns: 1fr 200px; gap: 1rem;">
-                    <textarea class="check-obs" placeholder="Observaciones y seguimiento..." style="width:100%; height:40px; font-size:0.8rem;"></textarea>
-                    <div>
-                         <label class="form-label" style="font-size:0.6rem;">Adjuntar Evidencia</label>
-                         <input type="file" class="check-photo" accept="image/*" style="font-size:0.7rem;">
+
+                <div class="checklist-grid-premium">
+                    <div class="check-group-premium">
+                        <label>Visual Video</label>
+                        <select class="check-visual" ${isDone ? 'disabled' : ''}>
+                            <option value="OK" ${isDone && lastReview.visual === 'OK' ? 'selected' : ''}>OK</option>
+                            <option value="FALLA" ${isDone && lastReview.visual === 'FALLA' ? 'selected' : ''}>FALLA</option>
+                        </select>
+                    </div>
+                    <div class="check-group-premium">
+                        <label>Audio</label>
+                        <select class="check-audio" ${isDone ? 'disabled' : ''}>
+                            <option value="OK" ${isDone && lastReview.audio === 'OK' ? 'selected' : ''}>OK</option>
+                            <option value="FALLA" ${isDone && lastReview.audio === 'FALLA' ? 'selected' : ''}>FALLA</option>
+                            <option value="N/A" ${isDone && lastReview.audio === 'N/A' ? 'selected' : ''}>N/A</option>
+                        </select>
+                    </div>
+                    <div class="check-group-premium">
+                        <label>Analíticas</label>
+                        <select class="check-analytics" ${isDone ? 'disabled' : ''}>
+                            <option value="OK" ${isDone && lastReview.analytics === 'OK' ? 'selected' : ''}>OK</option>
+                            <option value="FALLA" ${isDone && lastReview.analytics === 'FALLA' ? 'selected' : ''}>FALLA</option>
+                        </select>
+                    </div>
+                    <div class="check-group-premium">
+                        <label>Hardware</label>
+                        <select class="check-hardware" ${isDone ? 'disabled' : ''}>
+                            <option value="OK" ${isDone && lastReview.hardware === 'OK' ? 'selected' : ''}>OK</option>
+                            <option value="FALLA" ${isDone && lastReview.hardware === 'FALLA' ? 'selected' : ''}>FALLA</option>
+                        </select>
                     </div>
                 </div>
-            </div>
-        `).join('');
+
+                <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: flex-end;">
+                    <div class="check-group-premium">
+                        <label>Observaciones</label>
+                        <input type="text" class="check-obs" value="${isDone ? lastReview.obs : ''}" placeholder="Escriba novedad..." ${isDone ? 'disabled' : ''} style="width:100%;">
+                    </div>
+                    ${!isDone ? `<button class="btn-submit-action" onclick="saveCctvReview('${cam.id}')" style="margin:0; height:36px; padding:0 15px; background:var(--primary-teal);"><i class="fas fa-save"></i> GUARDAR</button>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    };
+
+    window.saveCctvReview = function (camId) {
+        const item = document.querySelector(`.checklist-item-premium[data-cam-id="${camId}"]`);
+        const reviews = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_cctv_daily_reviews')) || '[]');
+        const today = new Date().toISOString().split('T')[0];
+
+        const review = {
+            camId: camId,
+            date: today,
+            visual: item.querySelector('.check-visual').value,
+            audio: item.querySelector('.check-audio').value,
+            analytics: item.querySelector('.check-analytics').value,
+            hardware: item.querySelector('.check-hardware').value,
+            obs: item.querySelector('.check-obs').value,
+            timestamp: new Date().toLocaleString()
+        };
+
+        reviews.push(review);
+        localStorage.setItem(window.getSiteKey('holcim_cctv_daily_reviews'), JSON.stringify(reviews));
+
+        showToast('Registro de CCTV guardado correctamente', 'success');
+        renderDailyCctvChecklist();
     };
 
     window.saveCctvDailyReview = async function () {
@@ -3319,11 +3435,19 @@ document.addEventListener('DOMContentLoaded', function () {
     window.activeLatId = null;
     window.activeLngId = null;
 
-    window.openMapPicker = function (latId, lngId) {
+    window.openMapPicker = function (latId, lngIdOrMode) {
         window.activeLatId = latId;
-        window.activeLngId = lngId;
+        // If second arg is 'polygon', we are in polygon mode. 
+        // Otherwise it's single mode and the second arg is the lngId.
+        window.pickerMode = (lngIdOrMode === 'polygon') ? 'polygon' : 'single';
+        window.activeLngId = (window.pickerMode === 'single') ? lngIdOrMode : null;
+
         const modal = document.getElementById('modal-map-picker');
         if (modal) modal.style.display = 'flex';
+
+        // Show/Hide clear button based on mode
+        const clearBtn = document.getElementById('btn-picker-clear');
+        if (clearBtn) clearBtn.style.display = (window.pickerMode === 'polygon') ? 'block' : 'none';
 
         if (!window.pickerMap) {
             window.pickerMap = L.map('picker-map').setView([9.9281, -84.0907], 16);
@@ -3331,10 +3455,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
             window.pickerMap.on('click', function (e) {
                 const { lat, lng } = e.latlng;
-                if (window.pickerMarker) window.pickerMap.removeLayer(window.pickerMarker);
-                window.pickerMarker = L.marker([lat, lng]).addTo(window.pickerMap);
-                document.getElementById('picker-coords-display').textContent = `[ ${lat.toFixed(6)} , ${lng.toFixed(6)} ]`;
-                window.tempCoords = { lat, lng };
+
+                if (window.pickerMode === 'polygon') {
+                    if (!window.polygonPoints) window.polygonPoints = [];
+                    window.polygonPoints.push([lat, lng]);
+
+                    if (window.pickerPolygon) window.pickerMap.removeLayer(window.pickerPolygon);
+                    window.pickerPolygon = L.polygon(window.polygonPoints, {
+                        color: 'var(--red-holcim)',
+                        fillColor: 'var(--red-holcim)',
+                        fillOpacity: 0.3
+                    }).addTo(window.pickerMap);
+
+                    document.getElementById('picker-coords-display').textContent = `Puntos: ${window.polygonPoints.length}`;
+                } else {
+                    if (window.pickerMarker) window.pickerMap.removeLayer(window.pickerMarker);
+                    window.pickerMarker = L.marker([lat, lng]).addTo(window.pickerMap);
+                    document.getElementById('picker-coords-display').textContent = `[ ${lat.toFixed(6)} , ${lng.toFixed(6)} ]`;
+                    window.tempCoords = { lat, lng };
+                }
             });
         } else {
             setTimeout(() => window.pickerMap.invalidateSize(), 100);
@@ -3343,8 +3482,20 @@ document.addEventListener('DOMContentLoaded', function () {
         // Reset picker state
         if (window.pickerMarker) window.pickerMap.removeLayer(window.pickerMarker);
         window.pickerMarker = null;
+
+        if (window.pickerPolygon) window.pickerMap.removeLayer(window.pickerPolygon);
+        window.pickerPolygon = null;
+        window.polygonPoints = [];
+
         document.getElementById('picker-coords-display').textContent = '[ - , - ]';
         window.tempCoords = null;
+    };
+
+    window.clearMapPickerPoints = function () {
+        window.polygonPoints = [];
+        if (window.pickerPolygon) window.pickerMap.removeLayer(window.pickerPolygon);
+        window.pickerPolygon = null;
+        document.getElementById('picker-coords-display').textContent = 'Puntos: 0';
     };
 
     window.closeMapPicker = function () {
@@ -3353,13 +3504,24 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     window.confirmMapPickerSelection = function () {
-        if (window.tempCoords && window.activeLatId && window.activeLngId) {
-            document.getElementById(window.activeLatId).value = window.tempCoords.lat.toFixed(6);
-            document.getElementById(window.activeLngId).value = window.tempCoords.lng.toFixed(6);
-            window.closeMapPicker();
-            showNotification('UBICACIÓN SELECCIONADA', 'success');
+        if (window.pickerMode === 'polygon') {
+            if (window.polygonPoints && window.polygonPoints.length >= 3) {
+                // Return as JSON array string
+                document.getElementById(window.activeLatId).value = JSON.stringify(window.polygonPoints);
+                window.closeMapPicker();
+                showNotification('POLÍGONO SELECCIONADO', 'success');
+            } else {
+                showNotification('MARQUE AL MENOS 3 PUNTOS PARA EL POLÍGONO', 'warning');
+            }
         } else {
-            showNotification('POR FAVOR MARQUE UN PUNTO EN EL MAPA', 'warning');
+            if (window.tempCoords && window.activeLatId && window.activeLngId) {
+                document.getElementById(window.activeLatId).value = window.tempCoords.lat.toFixed(6);
+                document.getElementById(window.activeLngId).value = window.tempCoords.lng.toFixed(6);
+                window.closeMapPicker();
+                showNotification('UBICACIÓN SELECCIONADA', 'success');
+            } else {
+                showNotification('POR FAVOR MARQUE UN PUNTO EN EL MAPA', 'warning');
+            }
         }
     };
 
@@ -3788,6 +3950,84 @@ document.addEventListener('DOMContentLoaded', function () {
         window.updateMapMarkers && window.updateMapMarkers();
     };
 
+    // --- SECURITY ZONES DB LOGIC ---
+    window.deleteDbZone = function (idx) {
+        if (!confirm('¿Eliminar esta zona? Esto afectará el mapa interactivo.')) return;
+        const key = window.getSiteKey('holcim_security_zones');
+        let zones = JSON.parse(localStorage.getItem(key) || '[]');
+        zones.splice(idx, 1);
+        localStorage.setItem(key, JSON.stringify(zones));
+        renderDbZones();
+        if (window.renderSecurityZones) window.renderSecurityZones();
+        showNotification('ZONA ELIMINADA', 'info');
+    };
+
+    const zoneDbForm = document.getElementById('db-zone-form');
+    if (zoneDbForm) {
+        zoneDbForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const id = document.getElementById('db-zone-id').value.trim().toUpperCase();
+            const name = document.getElementById('db-zone-name').value.trim().toUpperCase();
+            const coordsStr = document.getElementById('db-zone-coords').value.trim();
+            const state = document.getElementById('db-zone-state').value;
+
+            try {
+                const coords = JSON.parse(coordsStr);
+                if (!Array.isArray(coords)) throw new Error('Format error');
+
+                const key = window.getSiteKey('holcim_security_zones');
+                let zones = JSON.parse(localStorage.getItem(key) || '[]');
+                zones.push({ id, name, coords, state });
+                localStorage.setItem(key, JSON.stringify(zones));
+
+                showNotification('ZONA REGISTRADA', 'success');
+                zoneDbForm.reset();
+                renderDbZones();
+                if (window.renderSecurityZones) window.renderSecurityZones();
+            } catch (err) {
+                showNotification('Error en formato de coordenadas JSON', 'error');
+            }
+        });
+    }
+
+    window.openEditDbZone = function (idx) {
+        const key = window.getSiteKey('holcim_security_zones');
+        const zones = JSON.parse(localStorage.getItem(key) || '[]');
+        const zone = zones[idx];
+        if (!zone) return;
+        document.getElementById('edit-db-zone-idx').value = idx;
+        document.getElementById('edit-db-zone-id').value = zone.id;
+        document.getElementById('edit-db-zone-name').value = zone.name;
+        document.getElementById('edit-db-zone-coords').value = JSON.stringify(zone.coords);
+        document.getElementById('edit-db-zone-state').value = zone.state;
+        document.getElementById('modal-edit-db-zone').style.display = 'flex';
+    };
+
+    window.saveEditDbZone = function () {
+        const idx = parseInt(document.getElementById('edit-db-zone-idx').value);
+        const key = window.getSiteKey('holcim_security_zones');
+        let zones = JSON.parse(localStorage.getItem(key) || '[]');
+        if (idx < 0 || idx >= zones.length) return;
+
+        try {
+            const coords = JSON.parse(document.getElementById('edit-db-zone-coords').value.trim());
+            if (!Array.isArray(coords)) throw new Error('Format error');
+
+            zones[idx].id = document.getElementById('edit-db-zone-id').value.trim().toUpperCase();
+            zones[idx].name = document.getElementById('edit-db-zone-name').value.trim().toUpperCase();
+            zones[idx].coords = coords;
+            zones[idx].state = document.getElementById('edit-db-zone-state').value;
+
+            localStorage.setItem(key, JSON.stringify(zones));
+            document.getElementById('modal-edit-db-zone').style.display = 'none';
+            showNotification('ZONA ACTUALIZADA', 'success');
+            renderDbZones();
+            if (window.renderSecurityZones) window.renderSecurityZones();
+        } catch (err) {
+            showNotification('Error en formato de coordenadas JSON', 'error');
+        }
+    };
+
     // ===================== CALENDAR FUNCTIONS =====================
 
     // ===================== EVENT REGISTRY FUNCTIONS =====================
@@ -3958,6 +4198,164 @@ document.addEventListener('DOMContentLoaded', function () {
         if (navLink) {
             navLink.classList.toggle('pulse-red-alert', hasActiveAlerts);
         }
+    };
+
+    // --- SECURITY ZONES LOGIC ---
+    window.zonesMap = null;
+    window.zonesLayers = {};
+
+    window.initSecurityZonesMap = function () {
+        if (window.zonesMap) {
+            setTimeout(() => window.zonesMap.invalidateSize(), 100);
+            return;
+        }
+
+        const mapDiv = document.getElementById('security-zones-map');
+        if (!mapDiv) return;
+
+        window.zonesMap = L.map('security-zones-map').setView([9.9281, -84.0907], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window.zonesMap);
+
+        renderSecurityZones();
+        updateZoneStats();
+    };
+
+    window.renderSecurityZones = function () {
+        if (!window.zonesMap) return;
+
+        // Clear existing
+        Object.values(window.zonesLayers).forEach(layer => window.zonesMap.removeLayer(layer));
+        window.zonesLayers = {};
+
+        const zones = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_security_zones')) || '[]');
+        const colors = { 'RED': '#ef4444', 'YELLOW': '#f59e0b', 'GREEN': '#10b981' };
+
+        zones.forEach(zone => {
+            const polygon = L.polygon(zone.coords, {
+                color: colors[zone.state],
+                fillColor: colors[zone.state],
+                fillOpacity: 0.35,
+                weight: 3
+            }).addTo(window.zonesMap);
+
+            polygon.bindTooltip(`<strong>${zone.name}</strong><br>Estado: ${zone.state}`, { sticky: true });
+            polygon.on('click', () => openZoneChecklist(zone.id));
+
+            window.zonesLayers[zone.id] = polygon;
+        });
+    };
+
+    window.updateZoneStats = function () {
+        const zones = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_security_zones')) || '[]');
+        const stats = { RED: 0, YELLOW: 0, GREEN: 0 };
+        zones.forEach(z => stats[z.state]++);
+
+        const redEl = document.getElementById('stats-zones-red');
+        const yellowEl = document.getElementById('stats-zones-yellow');
+        const greenEl = document.getElementById('stats-zones-green');
+
+        if (redEl) redEl.textContent = stats.RED;
+        if (yellowEl) yellowEl.textContent = stats.YELLOW;
+        if (greenEl) greenEl.textContent = stats.GREEN;
+    };
+
+    window.openZoneChecklist = function (zoneId) {
+        const zones = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_security_zones')) || '[]');
+        const zone = zones.find(z => z.id === zoneId);
+        if (!zone) return;
+
+        document.getElementById('checklist-zone-name').textContent = zone.name;
+        document.getElementById('checklist-zone-id').value = zoneId;
+        document.getElementById('zone-checklist-form').reset();
+        document.getElementById('modal-zone-checklist').style.display = 'flex';
+    };
+
+    window.closeZoneChecklist = function () {
+        document.getElementById('modal-zone-checklist').style.display = 'none';
+    };
+
+    window.saveZoneChecklist = function (event) {
+        if (event) event.preventDefault();
+
+        const zoneId = document.getElementById('checklist-zone-id').value;
+        const form = document.getElementById('zone-checklist-form');
+
+        // Checklist logic (must be ensured all is checked for GREEN/YELLOW)
+        const selects = form.querySelectorAll('select');
+        let allOk = true;
+        selects.forEach(s => {
+            if (s.value === 'FALLA' || s.value === 'SIN' || s.value === 'DEBIL' || s.value === 'TOTAL' || s.value === 'PARCIAL') {
+                allOk = false;
+            }
+        });
+
+        const checkRec = document.getElementById('check-cctv-rec').checked;
+        if (!checkRec) allOk = false;
+
+        const obs = document.getElementById('check-zone-obs').value.trim();
+        const newState = allOk ? (obs ? 'YELLOW' : 'GREEN') : 'RED';
+
+        const storageKey = window.getSiteKey('holcim_security_zones');
+        let zones = JSON.parse(localStorage.getItem(storageKey));
+        const zoneIdx = zones.findIndex(z => z.id === zoneId);
+
+        if (zoneIdx !== -1) {
+            const oldState = zones[zoneIdx].state;
+            zones[zoneIdx].state = newState;
+            localStorage.setItem(storageKey, JSON.stringify(zones));
+
+            // Log entry
+            const logKey = window.getSiteKey('holcim_security_zone_logs');
+            const logs = JSON.parse(localStorage.getItem(logKey) || '[]');
+            const user = getSession();
+            logs.unshift({
+                timestamp: new Date().toISOString(),
+                zoneId,
+                zoneName: zones[zoneIdx].name,
+                oldState,
+                newState,
+                user: user.email,
+                obs
+            });
+            localStorage.setItem(logKey, JSON.stringify(logs.slice(0, 50)));
+
+            showNotification(`Zona ${zones[zoneIdx].id} actualizada a ${newState}`, 'success');
+            addLogEvent('SEGURIDAD', `Zona ${zones[zoneIdx].id} asegurada: ${newState}`);
+
+            closeZoneChecklist();
+            renderSecurityZones();
+            updateZoneStats();
+            renderZoneMiniHistory();
+        }
+    };
+
+    const zoneChecklistForm = document.getElementById('zone-checklist-form');
+    if (zoneChecklistForm) {
+        zoneChecklistForm.addEventListener('submit', window.saveZoneChecklist);
+    }
+
+    window.renderZoneMiniHistory = function () {
+        const container = document.getElementById('zone-mini-history-list');
+        if (!container) return;
+
+        const logs = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_security_zone_logs')) || '[]');
+        if (logs.length === 0) {
+            container.innerHTML = '<div style="padding:1rem; color:var(--text-muted); text-align:center;">Sin registros recientes.</div>';
+            return;
+        }
+
+        const colors = { 'RED': 'var(--red-holcim)', 'YELLOW': 'var(--primary-teal)', 'GREEN': '#10b981' };
+
+        container.innerHTML = logs.slice(0, 5).map(log => `
+            <div style="padding:10px; border-bottom:1px solid var(--border-gray); font-size:0.8rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                    <strong>${log.zoneId} - ${new Date(log.timestamp).toLocaleTimeString()}</strong>
+                    <span style="color:${colors[log.newState]}; font-weight:700;">${log.newState}</span>
+                </div>
+                <div style="color:var(--text-muted); font-size:0.75rem;">Oficial: ${log.user.split('@')[0]}</div>
+                ${log.obs ? `<div style="margin-top:4px; font-style:italic;">"${log.obs}"</div>` : ''}
+            </div>
+        `).join('');
     };
 
     // Finalize initialization

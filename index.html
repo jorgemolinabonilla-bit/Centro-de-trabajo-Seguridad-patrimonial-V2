@@ -13,6 +13,10 @@
     <!-- Leaflet.js for Interactive Maps -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Gemini Assistant Styles -->
+    <link rel="stylesheet" href="gemini-assistant.css">
+
     <style>
         @keyframes pulse-red {
             0% {
@@ -821,6 +825,8 @@
                     del sistema.</p>
             </div>
 
+
+
             <!-- Database Tab Navigation -->
             <div
                 style="display: flex; gap: 10px; margin-bottom: 2rem; border-bottom: 1px solid #ddd; padding-bottom: 10px; overflow-x: auto;">
@@ -839,6 +845,8 @@
                     style="background: #1e293b;"><i class="fas fa-video"></i> Inventario CCTV</button>
                 <button class="btn-export db-tab-btn" onclick="switchDbTab('access-points-tab', this)"
                     style="background: #0d9488;"><i class="fas fa-door-open"></i> Puntos de Acceso</button>
+                <button class="btn-export db-tab-btn" onclick="switchDbTab('zones-db-tab', this)"
+                    style="background: #ed1c16;"><i class="fas fa-map-marked-alt"></i> Zonas de Seguridad</button>
             </div>
 
             <div id="db-tabs-container">
@@ -1060,7 +1068,8 @@
                                     </div>
                                     <button type="submit" class="btn-submit-action"
                                         style="height: 42px; background: #e11d48; width: 100%;"><i
-                                            class="fas fa-save"></i> GUARDAR</button>
+                                            class="fas fa-save"></i>
+                                        GUARDAR</button>
                                 </form>
                             </div>
                             <div class="monitor-list" style="max-height: 500px; overflow-y: auto;">
@@ -1196,6 +1205,68 @@
                     </div>
                 </div>
 
+                <!-- Security Zones Tab (Admin) -->
+                <div id="zones-db-tab" class="db-tab-content" style="display: none;">
+                    <div class="card-panel">
+                        <div class="panel-header">
+                            <h4><i class="fas fa-map-marked-alt"></i> Configuración de Zonas de Seguridad</h4>
+                        </div>
+                        <div class="panel-body">
+                            <div
+                                style="background: rgba(237, 28, 22, 0.05); padding: 1.5rem; border-radius: 8px; border: 1px dashed #ed1c16; margin-bottom: 2rem;">
+                                <h5 style="margin-top: 0; color: #ed1c16;"><i class="fas fa-plus-circle"></i> Nueva Zona
+                                    (Coordenadas)</h5>
+                                <form id="db-zone-form"
+                                    style="display: grid; grid-template-columns: 80px 1fr 1fr 1fr 100px; gap: 15px; align-items: end;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label class="form-label">ID (Z#)</label>
+                                        <input type="text" id="db-zone-id" placeholder="Z5" required>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label class="form-label">Nombre de Zona</label>
+                                        <input type="text" id="db-zone-name" placeholder="Zona 5: Bodega..." required>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label class="form-label">Coordenadas (Array JSON)</label>
+                                        <div style="display: flex; gap: 5px;">
+                                            <input type="text" id="db-zone-coords" placeholder="[[lat,lng], ...]"
+                                                required>
+                                            <button type="button" class="btn-salida-corpo"
+                                                onclick="openMapPicker('db-zone-coords', 'polygon')"
+                                                style="width: 40px; padding: 0;"><i
+                                                    class="fas fa-location-dot"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label class="form-label">Estado Inicial</label>
+                                        <select id="db-zone-state">
+                                            <option value="RED">RED (Critico)</option>
+                                            <option value="YELLOW">YELLOW (Semi)</option>
+                                            <option value="GREEN">GREEN (Asegurado)</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn-submit-action"
+                                        style="height: 42px; background: #ed1c16; width: 100%;"><i
+                                            class="fas fa-save"></i>
+                                        GUARDAR</button>
+                                </form>
+                                <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 10px;">* Use formato
+                                    de array para coordenadas: <code>[[lat,lng], [lat,lng], ...]</code></p>
+                            </div>
+
+                            <div class="monitor-list" style="max-height: 500px; overflow-y: auto;">
+                                <div class="list-head" style="grid-template-columns: 80px 1fr 100px 100px;">
+                                    <span>ID</span>
+                                    <span>Nombre de Zona</span>
+                                    <span>Estado</span>
+                                    <span>Acción</span>
+                                </div>
+                                <div id="db-zone-list-body"><!-- Zones CRUD --></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Access Points Tab -->
                 <div id="access-points-tab" class="db-tab-content" style="display: none;">
                     <div class="card-panel">
@@ -1307,6 +1378,9 @@
                 <button class="btn-export security-hub-tab active" onclick="switchSecurityTab('sec-cctv', this)"
                     style="background: var(--navy-black); padding: 12px 24px; font-size: 0.8rem; flex: 1;"><i
                         class="fas fa-video"></i>&nbsp; Monitoreo Seg. Electrónica</button>
+                <button class="btn-export security-hub-tab" onclick="switchSecurityTab('sec-zones', this)"
+                    style="background: #6366f1; padding: 12px 24px; font-size: 0.8rem; flex: 1;"><i
+                        class="fas fa-map-location-dot"></i>&nbsp; Mapa por Zonas</button>
                 <button class="btn-export security-hub-tab" onclick="switchSecurityTab('sec-portones', this)"
                     style="background: #0d9488; padding: 12px 24px; font-size: 0.8rem; flex: 1;"><i
                         class="fas fa-door-open"></i>&nbsp; Checklist de Puntos de Acceso</button>
@@ -1465,6 +1539,72 @@
                             </div>
                             <div id="cctv-history-container">
                                 <!-- History items rendered here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ---- TAB 3: Security Zones Map ---- -->
+            <div id="sec-zones-tab" class="security-hub-content" style="display: none;">
+                <div class="card-panel">
+                    <div class="panel-header"
+                        style="background: linear-gradient(135deg, #4f46e5, #3730a3); display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem;">
+                        <div>
+                            <h3 style="color: white; margin: 0;"><i class="fas fa-map-location-dot"></i> Mapa de Control
+                                de Zonas</h3>
+                            <p style="color: rgba(255,255,255,0.7); font-size: 0.75rem; margin: 0.3rem 0 0;">
+                                Gestión del estado de seguridad por áreas perimetrales</p>
+                        </div>
+                        <div id="zone-stats-summary" style="display: flex; gap: 15px;">
+                            <span class="badge-motivo"
+                                style="background: rgba(239, 68, 68, 0.2); color: #fecaca; border: 1px solid rgba(239, 68, 68, 0.3);">
+                                NO ASEGURADO: <strong id="stats-zones-red">0</strong>
+                            </span>
+                            <span class="badge-motivo"
+                                style="background: rgba(245, 158, 11, 0.2); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.3);">
+                                EN PROCESO: <strong id="stats-zones-yellow">0</strong>
+                            </span>
+                            <span class="badge-motivo"
+                                style="background: rgba(34, 197, 94, 0.2); color: #bbf7d0; border: 1px solid rgba(34, 197, 94, 0.3);">
+                                SEGURO: <strong id="stats-zones-green">0</strong>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="padding: 1rem;">
+                        <!-- Map Viewport -->
+                        <div id="security-zones-map-container"
+                            style="height: 600px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-gray); position: relative;">
+                            <div id="security-zones-map" style="height: 100%; width: 100%;"></div>
+
+                            <!-- Legend Overlay -->
+                            <div
+                                style="position: absolute; bottom: 20px; right: 20px; z-index: 1000; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.7rem; border: 1px solid #ddd;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                    <div style="width: 12px; height: 12px; background: #ed1c16; border-radius: 2px;">
+                                    </div>
+                                    <span>No Asegurada / Crítico</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                    <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px;">
+                                    </div>
+                                    <span>Semi-asegurada / Obs. Leve</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="width: 12px; height: 12px; background: #059669; border-radius: 2px;">
+                                    </div>
+                                    <span>Zona Asegurada</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Zone Logs (Compact) -->
+                        <div style="margin-top: 1.5rem;">
+                            <h4 style="font-size: 0.85rem; margin-bottom: 1rem;"><i
+                                    class="fas fa-clock-rotate-left"></i> Últimas Revisiones por Zona</h4>
+                            <div id="zone-mini-history"
+                                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
+                                <!-- Zone summaries populated via JS -->
                             </div>
                         </div>
                     </div>
@@ -1753,6 +1893,14 @@
                 </div>
             </div>
 
+            <div style="padding: 0 1.5rem;">
+                <div class="persistence-notice" style="margin-bottom: 1rem;">
+                    <i class="fas fa-sync-alt"></i>
+                    <p style="margin:0">Los registros de este navegador son independientes. Para ver notas creadas en
+                        otro equipo o versión, use la función de <strong>Importar Respaldo</strong>.</p>
+                </div>
+            </div>
+
             <div
                 style="display: grid; grid-template-columns: 350px 1fr; gap: 20px; padding: 0 1.5rem 1.5rem 1.5rem; height: calc(100vh - 180px);">
                 <!-- Form Side -->
@@ -1869,6 +2017,15 @@
                     <div class="filter-group">
                         <label style="color:white; font-size: 0.65rem;">HASTA</label>
                         <input type="date" id="stats-filter-end" style="height: 30px; font-size: 0.75rem;">
+                    </div>
+                    <div class="filter-group">
+                        <label style="color:white; font-size: 0.65rem;">CATEGORÍA</label>
+                        <select id="stats-filter-category" style="height: 30px; font-size: 0.75rem;">
+                            <option value="ALL">TODOS LOS TIPOS</option>
+                            <option value="VISITANTE">VISITANTE</option>
+                            <option value="PROVEEDOR">PROVEEDOR</option>
+                            <option value="CONTRATISTA">CONTRATISTA</option>
+                        </select>
                     </div>
                     <div class="filter-group">
                         <label style="color:white; font-size: 0.65rem;">DEPTO</label>
@@ -2643,6 +2800,9 @@
                 <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Haga clic en el mapa para marcar la
                     UBICACIóN exacta.</p>
                 <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="btn-picker-clear" class="btn-salida-corpo" onclick="clearMapPickerPoints()"
+                        style="padding: 5px 15px; margin: 0; width: auto; background: var(--red-holcim); color: white; display: none;">LIMPIAR
+                        PUNTOS</button>
                     <span id="picker-coords-display"
                         style="font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--primary-teal);">[
                         - , - ]</span>
@@ -2654,6 +2814,47 @@
     </div>
 
     <!-- ===================== EDIT MODALS — BASE DE DATOS ===================== -->
+
+    <!-- EDIT: Security Zone -->
+    <div id="modal-edit-db-zone" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width:550px;">
+            <div class="panel-header"
+                style="background:#ed1c16;display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="color:white;margin:0;"><i class="fas fa-map-marked-alt"></i> Editar Zona de Seguridad</h3>
+                <button onclick="document.getElementById('modal-edit-db-zone').style.display='none'"
+                    style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;">&times;</button>
+            </div>
+            <div class="panel-body">
+                <input type="hidden" id="edit-db-zone-idx">
+                <div class="form-group"><label class="form-label">ID (Z#)</label><input type="text" id="edit-db-zone-id"
+                        required></div>
+                <div class="form-group"><label class="form-label">Nombre de Zona</label><input type="text"
+                        id="edit-db-zone-name" required></div>
+                <div class="form-group">
+                    <label class="form-label">Coordenadas (Array JSON)</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="edit-db-zone-coords" required>
+                        <button type="button" class="btn-salida-corpo"
+                            onclick="openMapPicker('edit-db-zone-coords', 'polygon')"
+                            style="width: 40px; padding: 0;"><i class="fas fa-location-dot"></i></button>
+                    </div>
+                </div>
+                <div class="form-group"><label class="form-label">Estado</label>
+                    <select id="edit-db-zone-state">
+                        <option value="RED">RED (Critico)</option>
+                        <option value="YELLOW">YELLOW (Semi)</option>
+                        <option value="GREEN">GREEN (Asegurado)</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:1rem;">
+                    <button class="btn-salida-corpo" style="flex:1;"
+                        onclick="document.getElementById('modal-edit-db-zone').style.display='none'">CANCELAR</button>
+                    <button class="btn-submit-action" style="flex:1;background:#ed1c16;" onclick="saveEditDbZone()"><i
+                            class="fas fa-save"></i> GUARDAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- EDIT: Llave -->
     <div id="modal-edit-db-key" class="modal-overlay" style="display:none;">
@@ -3081,6 +3282,148 @@
         </div>
     </div>
 
+    <!-- MODAL: Checklist de Seguridad por Zona -->
+    <div id="modal-zone-checklist" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 650px;">
+            <div class="panel-header"
+                style="background: linear-gradient(135deg, #4f46e5, #3730a3); color: white; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 style="margin: 0;"><i class="fas fa-clipboard-check"></i> Checklist de Seguridad: <span
+                            id="checklist-zone-name">Zona 1</span></h3>
+                    <p style="font-size: 0.7rem; color: rgba(255,255,255,0.7); margin: 5px 0 0;">Complete todos los
+                        campos para asegurar el área</p>
+                </div>
+                <button onclick="document.getElementById('modal-zone-checklist').style.display='none'"
+                    style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div class="panel-body" style="padding: 1.5rem;">
+                <form id="zone-checklist-form">
+                    <input type="hidden" id="checklist-zone-id">
+
+                    <!-- Section 1: Electronic Systems -->
+                    <div style="margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+                        <h4 style="font-size: 0.8rem; color: #4f46e5; margin-bottom: 10px; text-transform: uppercase;">
+                            <i class="fas fa-microchip"></i> Sistemas de Seguridad Electrónica
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label class="form-label">Funcionamiento General</label>
+                                <select id="check-elec-func" required>
+                                    <option value="OK">Operativo / OK</option>
+                                    <option value="FALLA">Falla Parcial</option>
+                                    <option value="CRITICO">Falla Crítica</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Respaldo de Energía (UPS/BAT)</label>
+                                <select id="check-elec-power" required>
+                                    <option value="OK">Carga OK</option>
+                                    <option value="BAJA">Batería Baja</option>
+                                    <option value="FALLA">Sin Respaldo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: CCTV -->
+                    <div style="margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+                        <h4 style="font-size: 0.8rem; color: #4f46e5; margin-bottom: 10px; text-transform: uppercase;">
+                            <i class="fas fa-video"></i> Cámaras de Videovigilancia
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label class="form-label">Visibilidad / Enfoque</label>
+                                <select id="check-cctv-func" required>
+                                    <option value="OK">Correcto</option>
+                                    <option value="BORROSO">Borroso / Sucio</option>
+                                    <option value="FALLA">Sin Señal</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Obstrucciones</label>
+                                <select id="check-cctv-obs" required>
+                                    <option value="SIN">Sin Obstrucciones</option>
+                                    <option value="PARCIAL">Rama / Objeto Parcial</option>
+                                    <option value="TOTAL">Obstrucción Total</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Grabación Activa</label>
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="check-cctv-rec" style="width: auto; height: auto;" checked>
+                                <span style="font-size: 0.85rem;">Confirmar grabación en NVR/VMS</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Access Points -->
+                    <div style="margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+                        <h4 style="font-size: 0.8rem; color: #4f46e5; margin-bottom: 10px; text-transform: uppercase;">
+                            <i class="fas fa-door-closed"></i> Puntos de Acceso
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label class="form-label">Chapa Magnética / Cerradura</label>
+                                <select id="check-access-lock" required>
+                                    <option value="OK">Asegurado (Lock)</option>
+                                    <option value="DEBIL">Falla Imán / Débil</option>
+                                    <option value="FALLA">No Asegura</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Obstrucción de Cierre</label>
+                                <select id="check-access-obs" required>
+                                    <option value="SIN">Libre de Obstáculos</option>
+                                    <option value="FALLA">Obstrucción / Cuña</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: General -->
+                    <div style="margin-bottom: 1.5rem; padding-bottom: 1rem;">
+                        <h4 style="font-size: 0.8rem; color: #4f46e5; margin-bottom: 10px; text-transform: uppercase;">
+                            <i class="fas fa-lightbulb"></i> Instalaciones Generales
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label class="form-label">Alumbrado</label>
+                                <select id="check-gen-light" required>
+                                    <option value="OK">100% Funcional</option>
+                                    <option value="PARCIAL">Fundido Parcial</option>
+                                    <option value="SIN">Sin Iluminación</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Cerca Perimetral / Muro</label>
+                                <select id="check-gen-fence" required>
+                                    <option value="OK">Intacto</option>
+                                    <option value="FALLA">Daño / Hueco Detected</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Observaciones Adicionales</label>
+                            <textarea id="check-zone-obs"
+                                style="width: 100%; height: 60px; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;"
+                                placeholder="Detalle cualquier novedad encontrada..."></textarea>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px;">
+                        <button type="button" class="btn-salida-corpo" style="flex: 1;"
+                            onclick="document.getElementById('modal-zone-checklist').style.display='none'">CANCELAR</button>
+                        <button type="submit" class="btn-submit-action"
+                            style="flex: 2; background: #4f46e5; margin: 0; height: 48px;">
+                            <i class="fas fa-shield-check"></i> GUARDAR Y ASEGURAR ZONA
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: ESCÁNER DE CÓDIGO -->
     <div id="modal-scanner" class="modal-overlay" style="display:none;">
         <div class="modal-content" style="max-width:500px; padding:0; overflow:hidden;">
@@ -3113,6 +3456,9 @@
     <script src="statistics.js"></script>
     <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
         preload="auto"></audio>
+
+    <!-- Gemini Assistant Script -->
+    <script src="gemini-assistant.js" defer></script>
 </body>
 
 </html>
