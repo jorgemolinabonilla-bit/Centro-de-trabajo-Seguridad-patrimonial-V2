@@ -2319,3 +2319,91 @@ select:focus {
 [data-theme="dark"] .checklist-title-premium {
     color: #f1f5f9;
 }
+
+/* --- RISK MARKER SEISMIC WAVE ANIMATIONS --- */
+@keyframes seismic-wave {
+    0% {
+        transform: scale(0.5);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(3);
+        opacity: 0;
+    }
+}
+
+.risk-marker {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.risk-marker-wave {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    opacity: 0;
+    animation: seismic-wave 2s infinite linear;
+}
+
+.risk-marker-wave:nth-child(2) {
+    animation-delay: 0.6s;
+}
+
+.risk-marker-wave:nth-child(3) {
+    animation-delay: 1.2s;
+}
+
+.risk-marker-inner {
+    width: 10px;
+    height: 10px;
+    background-color: currentColor;
+    border-radius: 50%;
+    z-index: 2;
+    box-shadow: 0 0 10px currentColor;
+}
+
+/* Severity Colors */
+.risk-red {
+    color: #ed1c16;
+}
+
+.risk-yellow {
+    color: #f59e0b;
+}
+
+.risk-green {
+    color: #10b981;
+}
+
+.custom-div-icon {
+    background: transparent;
+    border: none;
+}
+
+/* --- BLINKING ALERT ANIMATION --- */
+@keyframes nav-blink-red {
+    0% {
+        background-color: var(--navy-black);
+    }
+
+    50% {
+        background-color: var(--red-holcim);
+    }
+
+    100% {
+        background-color: var(--navy-black);
+    }
+}
+
+.nav-blink-red {
+    animation: nav-blink-red 1.5s infinite ease-in-out;
+    background-color: var(--red-holcim) !important;
+    color: white !important;
+}

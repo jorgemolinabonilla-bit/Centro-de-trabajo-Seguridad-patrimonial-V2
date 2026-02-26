@@ -652,6 +652,21 @@ document.addEventListener('DOMContentLoaded', function () {
         if (viewId === 'statistics') {
             if (typeof window.renderStatistics === 'function') window.renderStatistics();
         }
+        if (viewId === 'security-systems') {
+            // Initialize default sub-tab if none active, or refresh active
+            const activeHubTab = document.querySelector('.security-hub-tab.active');
+            if (activeHubTab) {
+                // Extracts the tab name from the onclick attribute: switchSecurityTab('sec-cctv', ...)
+                const match = activeHubTab.getAttribute('onclick').match(/'([^']+)'/);
+                if (match) window.switchSecurityTab(match[1], activeHubTab);
+            } else {
+                const firstHubTab = document.querySelector('.security-hub-tab');
+                if (firstHubTab) {
+                    const match = firstHubTab.getAttribute('onclick').match(/'([^']+)'/);
+                    if (match) window.switchSecurityTab(match[1], firstHubTab);
+                }
+            }
+        }
     };
 
     // --- NAVIGATION EVENT BINDING ---
@@ -960,6 +975,7 @@ document.addEventListener('DOMContentLoaded', function () {
             showNotification('AUTORIZACIÓN GUARDADA', 'success');
             addLogEvent('AUTORIZACIÓN', 'Nueva: ' + newAuth.name);
             authForm.reset(); renderAuthList();
+            if (window.checkExtraAuthAlerts) window.checkExtraAuthAlerts();
         });
     }
 
@@ -1005,6 +1021,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             document.getElementById('modal-edit-auth').style.display = 'none';
             renderAuthList();
+            if (window.checkExtraAuthAlerts) window.checkExtraAuthAlerts();
         }
     };
 
@@ -1018,6 +1035,7 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem(ak, JSON.stringify(auths));
         showNotification('AUTORIZACIÓN ELIMINADA', 'info');
         renderAuthList();
+        if (window.checkExtraAuthAlerts) window.checkExtraAuthAlerts();
     };
 
     function renderAuthList() {
@@ -4200,9 +4218,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    // --- SECURITY ZONES LOGIC ---
+    // --- RISK POINTS IDENTIFICATION LOGIC (SEISMIC MAP) ---
     window.zonesMap = null;
-    window.zonesLayers = {};
+    window.riskLayers = {};
 
     window.initSecurityZonesMap = function () {
         if (window.zonesMap) {
@@ -4213,42 +4231,91 @@ document.addEventListener('DOMContentLoaded', function () {
         const mapDiv = document.getElementById('security-zones-map');
         if (!mapDiv) return;
 
+        // Default view (San José, CR or similar)
         window.zonesMap = L.map('security-zones-map').setView([9.9281, -84.0907], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window.zonesMap);
 
-        renderSecurityZones();
-        updateZoneStats();
+        // Click to add risk point
+        window.zonesMap.on('click', function (e) {
+            window.openRiskModal(e.latlng.lat, e.latlng.lng);
+        });
+
+        renderRiskPoints();
+        updateRiskStats();
     };
 
-    window.renderSecurityZones = function () {
+    window.openRiskModal = function (lat, lng) {
+        document.getElementById('risk-lat').value = lat;
+        document.getElementById('risk-lng').value = lng;
+        document.getElementById('risk-location-coords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        document.getElementById('risk-identification-form').reset();
+        document.getElementById('modal-zone-checklist').style.display = 'flex';
+    };
+
+    window.closeRiskModal = function () {
+        document.getElementById('modal-zone-checklist').style.display = 'none';
+    };
+
+    window.renderRiskPoints = function () {
         if (!window.zonesMap) return;
 
-        // Clear existing
-        Object.values(window.zonesLayers).forEach(layer => window.zonesMap.removeLayer(layer));
-        window.zonesLayers = {};
+        // Clear existing markers
+        Object.values(window.riskLayers).forEach(layer => window.zonesMap.removeLayer(layer));
+        window.riskLayers = {};
 
-        const zones = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_security_zones')) || '[]');
-        const colors = { 'RED': '#ef4444', 'YELLOW': '#f59e0b', 'GREEN': '#10b981' };
+        const risks = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_risk_points')) || '[]');
 
-        zones.forEach(zone => {
-            const polygon = L.polygon(zone.coords, {
-                color: colors[zone.state],
-                fillColor: colors[zone.state],
-                fillOpacity: 0.35,
-                weight: 3
-            }).addTo(window.zonesMap);
+        risks.forEach(risk => {
+            const className = `risk-${risk.level.toLowerCase()}`;
 
-            polygon.bindTooltip(`<strong>${zone.name}</strong><br>Estado: ${zone.state}`, { sticky: true });
-            polygon.on('click', () => openZoneChecklist(zone.id));
+            // Create seismic wave icon
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `
+                    <div class="risk-marker ${className}">
+                        <div class="risk-marker-wave"></div>
+                        <div class="risk-marker-wave"></div>
+                        <div class="risk-marker-wave"></div>
+                        <div class="risk-marker-inner"></div>
+                    </div>
+                `,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
 
-            window.zonesLayers[zone.id] = polygon;
+            const marker = L.marker([risk.lat, risk.lng], { icon }).addTo(window.zonesMap);
+
+            const popupContent = `
+                <div style="min-width: 180px;">
+                    <div style="font-weight: 800; color: #e11d48; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px;">
+                        <i class="fas fa-triangle-exclamation"></i> ${risk.title}
+                    </div>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 8px;">
+                        <strong>Sectores:</strong> ${risk.sector}<br>
+                        <strong>Nivel:</strong> <span class="badge-motivo" style="padding: 2px 6px; font-size:0.6rem; color: white; background: ${risk.level === 'RED' ? '#ef4444' : (risk.level === 'YELLOW' ? '#f59e0b' : '#10b981')}">${risk.level}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; background: #f8fafc; padding: 8px; border-radius: 4px; border-left: 3px solid #cbd5e1;">
+                        ${risk.desc || 'Sin descripción detallada.'}
+                    </div>
+                    <button onclick="window.deleteRiskPoint('${risk.id}')" style="width: 100%; margin-top: 10px; padding: 5px; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 4px; font-size: 0.7rem; cursor: pointer;">
+                        <i class="fas fa-trash-can"></i> ELIMINAR PUNTO
+                    </button>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent);
+            window.riskLayers[risk.id] = marker;
         });
     };
 
-    window.updateZoneStats = function () {
-        const zones = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_security_zones')) || '[]');
+    window.updateRiskStats = function () {
+        const risks = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_risk_points')) || '[]');
         const stats = { RED: 0, YELLOW: 0, GREEN: 0 };
-        zones.forEach(z => stats[z.state]++);
+        risks.forEach(r => {
+            if (r.level && stats[r.level] !== undefined) {
+                stats[r.level]++;
+            }
+        });
 
         const redEl = document.getElementById('stats-zones-red');
         const yellowEl = document.getElementById('stats-zones-yellow');
@@ -4259,80 +4326,117 @@ document.addEventListener('DOMContentLoaded', function () {
         if (greenEl) greenEl.textContent = stats.GREEN;
     };
 
-    window.openZoneChecklist = function (zoneId) {
-        const zones = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_security_zones')) || '[]');
-        const zone = zones.find(z => z.id === zoneId);
-        if (!zone) return;
+    // Form submission
+    const riskForm = document.getElementById('risk-identification-form');
+    if (riskForm) {
+        riskForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const storageKey = window.getSiteKey('holcim_risk_points');
+            const risks = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
-        document.getElementById('checklist-zone-name').textContent = zone.name;
-        document.getElementById('checklist-zone-id').value = zoneId;
-        document.getElementById('zone-checklist-form').reset();
-        document.getElementById('modal-zone-checklist').style.display = 'flex';
-    };
+            const newRisk = {
+                id: 'risk_' + Date.now(),
+                lat: parseFloat(document.getElementById('risk-lat').value),
+                lng: parseFloat(document.getElementById('risk-lng').value),
+                title: document.getElementById('risk-title').value,
+                level: document.getElementById('risk-level').value,
+                sector: document.getElementById('risk-sector').value,
+                desc: document.getElementById('risk-desc').value,
+                timestamp: new Date().toISOString()
+            };
 
-    window.closeZoneChecklist = function () {
-        document.getElementById('modal-zone-checklist').style.display = 'none';
-    };
+            risks.push(newRisk);
+            localStorage.setItem(storageKey, JSON.stringify(risks));
 
-    window.saveZoneChecklist = function (event) {
-        if (event) event.preventDefault();
+            showNotification('PUNTO DE RIESGO REGISTRADO', 'success');
+            addLogEvent('RIESGOS', 'Identificado peligro: ' + newRisk.title);
 
-        const zoneId = document.getElementById('checklist-zone-id').value;
-        const form = document.getElementById('zone-checklist-form');
-
-        // Checklist logic (must be ensured all is checked for GREEN/YELLOW)
-        const selects = form.querySelectorAll('select');
-        let allOk = true;
-        selects.forEach(s => {
-            if (s.value === 'FALLA' || s.value === 'SIN' || s.value === 'DEBIL' || s.value === 'TOTAL' || s.value === 'PARCIAL') {
-                allOk = false;
-            }
+            window.closeRiskModal();
+            renderRiskPoints();
+            updateRiskStats();
         });
+    }
 
-        const checkRec = document.getElementById('check-cctv-rec').checked;
-        if (!checkRec) allOk = false;
+    window.deleteRiskPoint = function (id) {
+        if (!confirm('¿Seguro que desea eliminar este punto de riesgo?')) return;
+        const storageKey = window.getSiteKey('holcim_risk_points');
+        let risks = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        risks = risks.filter(r => r.id !== id);
+        localStorage.setItem(storageKey, JSON.stringify(risks));
 
-        const obs = document.getElementById('check-zone-obs').value.trim();
-        const newState = allOk ? (obs ? 'YELLOW' : 'GREEN') : 'RED';
+        showNotification('PUNTO ELIMINADO', 'info');
+        renderRiskPoints();
+        updateRiskStats();
+    };
 
-        const storageKey = window.getSiteKey('holcim_security_zones');
-        let zones = JSON.parse(localStorage.getItem(storageKey));
-        const zoneIdx = zones.findIndex(z => z.id === zoneId);
+    window.searchRiskMapLocation = async function () {
+        const input = document.getElementById('risk-map-search-input');
+        if (!input) return;
+        const query = input.value.trim();
+        if (!query) return showNotification('INGRESE UN SITIO PARA BUSCAR', 'warning');
 
-        if (zoneIdx !== -1) {
-            const oldState = zones[zoneIdx].state;
-            zones[zoneIdx].state = newState;
-            localStorage.setItem(storageKey, JSON.stringify(zones));
+        // Locate the specific search button more reliably
+        const btn = document.querySelector('button[onclick*="searchRiskMapLocation"]') ||
+            document.querySelector('.panel-body button.btn-submit-action');
 
-            // Log entry
-            const logKey = window.getSiteKey('holcim_security_zone_logs');
-            const logs = JSON.parse(localStorage.getItem(logKey) || '[]');
-            const user = getSession();
-            logs.unshift({
-                timestamp: new Date().toISOString(),
-                zoneId,
-                zoneName: zones[zoneIdx].name,
-                oldState,
-                newState,
-                user: user.email,
-                obs
+        const originalHtml = btn ? btn.innerHTML : '';
+
+        try {
+            // Show loading state
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> BUSCANDO...';
+            }
+
+            console.log('Searching location:', query);
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+                headers: {
+                    'Accept-Language': 'es',
+                    'User-Agent': 'HolcimSecurityPlatform/3.1'
+                }
             });
-            localStorage.setItem(logKey, JSON.stringify(logs.slice(0, 50)));
+            const data = await response.json();
 
-            showNotification(`Zona ${zones[zoneIdx].id} actualizada a ${newState}`, 'success');
-            addLogEvent('SEGURIDAD', `Zona ${zones[zoneIdx].id} asegurada: ${newState}`);
+            if (data && data.length > 0) {
+                const result = data[0];
+                const lat = parseFloat(result.lat);
+                const lon = parseFloat(result.lon);
 
-            closeZoneChecklist();
-            renderSecurityZones();
-            updateZoneStats();
-            renderZoneMiniHistory();
+                console.log('Location found:', lat, lon);
+
+                // Ensure map exists
+                if (!window.zonesMap) {
+                    window.initSecurityZonesMap();
+                }
+
+                if (window.zonesMap) {
+                    window.zonesMap.flyTo([lat, lon], 17, {
+                        duration: 1.5
+                    });
+
+                    // Force resize and redraw after flight to ensure markers and tiles appear
+                    setTimeout(() => {
+                        window.zonesMap.invalidateSize();
+                        renderRiskPoints();
+                    }, 500);
+
+                    showNotification('UBICACIÓN ENCONTRADA: ' + result.display_name.split(',')[0], 'success');
+                } else {
+                    showNotification('ERROR AL INICIALIZAR EL MAPA', 'error');
+                }
+            } else {
+                showNotification('NO SE ENCONTRÓ EL SITIO: ' + query, 'warning');
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            showNotification('ERROR EN LA CONEXIÓN DE BÚSQUEDA', 'error');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
     };
-
-    const zoneChecklistForm = document.getElementById('zone-checklist-form');
-    if (zoneChecklistForm) {
-        zoneChecklistForm.addEventListener('submit', window.saveZoneChecklist);
-    }
 
     window.renderZoneMiniHistory = function () {
         const container = document.getElementById('zone-mini-history-list');
@@ -4358,6 +4462,33 @@ document.addEventListener('DOMContentLoaded', function () {
         `).join('');
     };
 
+    // --- ALERT MONITORING ---
+    window.checkExtraAuthAlerts = function () {
+        const ak = window.getSiteKey('holcim_extra_auths');
+        const auths = JSON.parse(localStorage.getItem(ak) || '[]');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const hasExpired = auths.some(a => {
+            const expDate = new Date(a.dateEnd);
+            return expDate < today;
+        });
+
+        const navLink = document.querySelector('[data-view="extra-auth"]');
+        if (navLink) {
+            navLink.classList.toggle('nav-blink-red', hasExpired);
+        }
+    };
+
     // Finalize initialization
     checkAuth();
+
+    // Initial alerts check
+    setTimeout(() => {
+        updateCounters();
+        window.checkExtraAuthAlerts();
+    }, 1000);
+
+    // Periodic checks
+    setInterval(window.checkExtraAuthAlerts, 60000); // Check every minute
 });
