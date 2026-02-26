@@ -2407,3 +2407,92 @@ select:focus {
     background-color: var(--red-holcim) !important;
     color: white !important;
 }
+
+/* --- MAP MARKERS: CCTV & ACCESS POINTS --- */
+.cctv-marker,
+.ap-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    font-size: 0.85rem;
+    color: white;
+    cursor: pointer;
+}
+
+.cctv-operational {
+    background: #059669;
+}
+
+.cctv-failure {
+    background: #dc2626;
+    animation: cctv-pulse-red 1.8s infinite ease-in-out;
+}
+
+@keyframes cctv-pulse-red {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+    }
+}
+
+.ap-marker {
+    background: #4f46e5;
+}
+
+@keyframes pulse-red {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+    }
+
+    70% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+    }
+}
+
+/* --- MAP CONTEXT MENU & PERIMETERS --- */
+.context-menu {
+    border: 1px solid #cbd5e1;
+}
+
+.ctx-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 15px;
+    background: white;
+    border: none;
+    font-size: 0.8rem;
+    color: #334155;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.ctx-btn:hover {
+    background: #f1f5f9;
+}
+
+.ctx-btn-highlight {
+    background: #fffbeb;
+    font-weight: 700;
+}
+
+.ctx-btn-highlight:hover {
+    background: #fef3c7;
+}
