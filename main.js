@@ -89,6 +89,8 @@ document.addEventListener('DOMContentLoaded', function () {
             nav_database: "Base de Datos",
             nav_security_systems: "Sistemas de Seguridad",
             nav_calendar: "Calendario",
+            nav_security_audit: "Análisis de Seguridad del Sitio",
+            nav_crime_stats: "Estadísticas Delincuenciales",
             nav_settings: "Configuración"
         },
         en: {
@@ -124,6 +126,8 @@ document.addEventListener('DOMContentLoaded', function () {
             nav_database: "Database",
             nav_security_systems: "Security Systems",
             nav_calendar: "Calendar",
+            nav_security_audit: "Security Audit",
+            nav_crime_stats: "Crime Statistics",
             nav_settings: "Settings"
         }
     };
@@ -610,7 +614,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- NAVIGATION ---
     window.switchView = function (viewId) {
-        const navLinks = document.querySelectorAll('.nav-link');
+        const navLinks = document.querySelectorAll('.nav-link, .nav-submenu-link');
         const sections = document.querySelectorAll('.view-section');
 
         // Hide login if authenticated
@@ -618,7 +622,16 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('login-overlay').style.display = 'none';
         }
 
-        navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('data-view') === viewId));
+        navLinks.forEach(l => {
+            const isActive = l.getAttribute('data-view') === viewId;
+            l.classList.toggle('active', isActive);
+
+            // If sub-menu link is active, ensure parent dropdown is open
+            if (isActive && l.classList.contains('nav-submenu-link')) {
+                const parentDropdown = l.closest('.nav-item-dropdown');
+                if (parentDropdown) parentDropdown.classList.add('active-dropdown');
+            }
+        });
 
         // Animation transition
         sections.forEach(v => {
@@ -665,13 +678,46 @@ document.addEventListener('DOMContentLoaded', function () {
             if (window._securityHubClockInterval) clearInterval(window._securityHubClockInterval);
             window._securityHubClockInterval = setInterval(updateClock, 1000);
         }
+        if (viewId === 'security-audit') {
+            if (typeof window.initSecurityAudit === 'function') {
+                window.initSecurityAudit();
+            }
+        }
+        if (viewId === 'crime-stats') {
+            if (typeof window.initCrimeStats === 'function') {
+                window.initCrimeStats();
+            }
+            if (typeof window.refreshCrimeMap === 'function') {
+                window.refreshCrimeMap();
+            }
+        }
     };
 
     // --- NAVIGATION EVENT BINDING ---
     document.addEventListener('click', e => {
-        const link = e.target.closest('.nav-link');
+        const link = e.target.closest('.nav-link, .nav-submenu-link');
+        const clickedInsideDropdown = e.target.closest('.nav-item-dropdown');
+
+        // Close all dropdowns when clicking outside any dropdown
+        if (!clickedInsideDropdown) {
+            document.querySelectorAll('.nav-item-dropdown').forEach(item => item.classList.remove('active-dropdown'));
+        }
+
         if (link) {
             e.preventDefault();
+
+            const dropdownParent = link.closest('.nav-item-dropdown');
+            const isSubmenuLink = link.classList.contains('nav-submenu-link');
+
+            // If it's a parent dropdown link, toggle the dropdown
+            if (dropdownParent && !isSubmenuLink) {
+                dropdownParent.classList.toggle('active-dropdown');
+                // Close other open dropdowns (accordion effect)
+                document.querySelectorAll('.nav-item-dropdown').forEach(item => {
+                    if (item !== dropdownParent) item.classList.remove('active-dropdown');
+                });
+            }
+
             const viewId = link.getAttribute('data-view');
             if (viewId) window.switchView(viewId);
         }
@@ -688,6 +734,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         if (sectionId === 'logs') renderLiveLog();
         if (sectionId === 'storage') updateStorageUI();
+        if (sectionId === 'system') {
+            const session = getSession();
+            if (session && document.getElementById('config-site-name')) {
+                document.getElementById('config-site-name').value = session.site || '';
+            }
+        }
     };
 
     // --- LOGOUT LOGIC ---
@@ -755,6 +807,7 @@ document.addEventListener('DOMContentLoaded', function () {
             initializeData('holcim_cctv_inventory', []);
             initializeData('holcim_cctv_reviews', []);
             initializeData('holcim_virtual_rounds', []);
+            initializeData('holcim_security_audit', {});
             initializeData('holcim_security_zones', [
                 { id: 'Z1', name: 'Zona 1: Perímetro Norte (Cantera)', state: 'RED', coords: [[9.930, -84.092], [9.932, -84.090], [9.932, -84.088], [9.930, -84.088]] },
                 { id: 'Z2', name: 'Zona 2: Planta de Producción y Silos', state: 'RED', coords: [[9.928, -84.092], [9.930, -84.092], [9.930, -84.088], [9.928, -84.088]] },
@@ -763,7 +816,15 @@ document.addEventListener('DOMContentLoaded', function () {
             ]);
             initializeData('holcim_security_zone_logs', []);
             updateBadgeDropdown();
-            switchView('dashboard');
+            switchView('home');
+
+            // Live clock for home screen
+            function updateHomeClock() {
+                const el = document.getElementById('home-live-time');
+                if (el) el.textContent = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+            updateHomeClock();
+            setInterval(updateHomeClock, 1000);
 
             // Start Calendar Alert System
             setInterval(checkCalendarAlerts, 60000); // Check every minute
@@ -3864,7 +3925,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const user = getSession();
 
             const storageKey = window.getSiteKey('holcim_shift_notes');
-            let notes = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            let notes = [];
+            try {
+                const stored = localStorage.getItem(storageKey);
+                notes = stored ? JSON.parse(stored) : [];
+                if (!Array.isArray(notes)) notes = [];
+            } catch (e) { notes = []; }
 
             if (id) {
                 // Update existing
@@ -3876,7 +3942,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 // Create new
                 notes.push({
-                    id: 'sn_' + Date.now(),
+                    id: 'sn_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
                     title, date, content,
                     user: user ? user.username : 'Oficial',
                     createdAt: new Date().toISOString()
@@ -3890,6 +3956,61 @@ document.addEventListener('DOMContentLoaded', function () {
             renderNotesList();
         });
     }
+
+    // --- CONSOLIDATED SETTINGS HELPERS ---
+    window.exportSystemData = function () {
+        const data = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('holcim_') || key.startsWith('audit_') || key.includes('_SECURITY_HUB')) {
+                data[key] = localStorage.getItem(key);
+            }
+        }
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `HOLCIM_HUB_BACKUP_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showNotification('RESPALDO DESCARGADO', 'success');
+    };
+
+    window.importSystemData = function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (confirm('Esto reemplazará los datos actuales. ¿Desea continuar?')) {
+                    Object.keys(data).forEach(key => localStorage.setItem(key, data[key]));
+                    alert('Datos importados con éxito. La página se recargará.');
+                    location.reload();
+                }
+            } catch (err) { alert('Error al procesar el archivo.'); }
+        };
+        reader.readAsText(file);
+    };
+
+    window.updateSystemSiteName = function () {
+        const newName = document.getElementById('config-site-name').value.trim();
+        if (!newName) return;
+        const session = getSession();
+        if (session) {
+            session.site = newName;
+            setSession(session);
+            // Also update user in users list
+            let users = JSON.parse(localStorage.getItem('holcim_users'));
+            const uIdx = users.findIndex(u => u.email === session.email);
+            if (uIdx !== -1) {
+                users[uIdx].site = newName;
+                localStorage.setItem('holcim_users', JSON.stringify(users));
+            }
+            alert('Nombre del sitio actualizado. Se requiere recargar.');
+            location.reload();
+        }
+    };
 
     window.editShiftNote = function (id) {
         const notes = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_shift_notes')) || '[]');
