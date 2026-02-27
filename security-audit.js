@@ -14,24 +14,21 @@
             weight: 25,
             items: [
                 // Intrusion Detection
-                { id: 'ta01', cat: 'Detección de Intrusión', label: 'Detección perímetral (existencia y calidad)', weight: 8 },
-                { id: 'ta02', cat: 'Detección de Intrusión', label: 'Detección interna en áreas sensibles', weight: 7 },
-                { id: 'ta03', cat: 'Detección de Intrusión', label: 'Detección interna en edificios', weight: 6 },
-                // Alarm
-                { id: 'ta04', cat: 'Sistema de Alarma', label: 'Posicionamiento de botones de alarma', weight: 6 },
-                { id: 'ta05', cat: 'Sistema de Alarma', label: 'Conexión con central de monitoreo', weight: 8 },
-                { id: 'ta06', cat: 'Sistema de Alarma', label: 'Sistema de redundancia', weight: 5 },
-                // CCTV
-                { id: 'ta07', cat: 'Sistema CCTV', label: 'Cobertura CCTV perimetral', weight: 8 },
-                { id: 'ta08', cat: 'Sistema CCTV', label: 'CCTV en áreas sensibles', weight: 7 },
-                { id: 'ta09', cat: 'Sistema CCTV', label: 'Tiempo de retención de grabaciones', weight: 6 },
-                { id: 'ta10', cat: 'Sistema CCTV', label: 'Monitoreo remoto', weight: 5 },
-                { id: 'ta11', cat: 'Sistema CCTV', label: 'Calidad de imagen', weight: 6 },
-                // Access Control
-                { id: 'ta12', cat: 'Control de Acceso', label: 'Entradas controladas', weight: 8 },
-                { id: 'ta13', cat: 'Control de Acceso', label: 'Sistema de gafetes/credenciales', weight: 7 },
-                { id: 'ta14', cat: 'Control de Acceso', label: 'Gestión de visitantes', weight: 6 },
-                { id: 'ta15', cat: 'Control de Acceso', label: 'Almacenamiento de registros de acceso', weight: 5 },
+                { id: 'ta01', cat: 'Detección de Intrusión', label: 'Detección perímetral (existencia y calidad)', weight: 8, desc: 'Evalúa la presencia y eficacia de sensores de movimiento, mallas electrificadas o sistemas de detección por fibra óptica en el perímetro.' },
+                { id: 'ta02', cat: 'Detección de Intrusión', label: 'Detección interna en áreas sensibles', weight: 7, desc: 'Verifica la protección de zonas críticas (bodegas, servidores, cajas) mediante PIR, sensores magnéticos o vibración.' },
+                { id: 'ta03', cat: 'Detección de Intrusión', label: 'Detección interna en edificios', weight: 6, desc: 'Sistemas anti-intrusión en oficinas y áreas comunes generales.' },
+                { id: 'ta04', cat: 'Sistema de Alarma', label: 'Posicionamiento de botones de alarma', weight: 6, desc: 'Ubicación estratégica de botones de pánico fijos y portátiles para el personal de seguridad y empleados clave.' },
+                { id: 'ta05', cat: 'Sistema de Alarma', label: 'Conexión con central de monitoreo', weight: 8, desc: 'Verificación de que el sistema reporta en tiempo real a una central de monitoreo (interna o externa) con tiempos de respuesta definidos.' },
+                { id: 'ta06', cat: 'Sistema de Alarma', label: 'Sistema de redundancia', weight: 5, desc: 'Existencia de canales alternativos de comunicación (GPRS, Radio, Satelital) en caso de fallo de la red principal.' },
+                { id: 'ta07', cat: 'Sistema CCTV', label: 'Cobertura CCTV perimetral', weight: 8, desc: 'Visualización completa de la línea perimetral sin puntos ciegos significativos.' },
+                { id: 'ta08', cat: 'Sistema CCTV', label: 'CCTV en áreas sensibles', weight: 7, desc: 'Cámaras dedicadas con alta resolución en puntos de alto valor o riesgo.' },
+                { id: 'ta09', cat: 'Sistema CCTV', label: 'Tiempo de retención de grabaciones', weight: 6, desc: 'Cumplimiento con la política de retención (ej. 30 días) para investigaciones forenses.' },
+                { id: 'ta10', cat: 'Sistema CCTV', label: 'Monitoreo remoto', weight: 5, desc: 'Capacidad de visualizar cámaras desde fuera del sitio o en centros de control regionales.' },
+                { id: 'ta11', cat: 'Sistema CCTV', label: 'Calidad de imagen', weight: 6, desc: 'Nitidez, visión nocturna y capacidad de identificación/reconocimiento de rostros y placas.' },
+                { id: 'ta12', cat: 'Control de Acceso', label: 'Entradas controladas', weight: 8, desc: 'Uso de torniquetes, lectoras o barreras automáticas para restringir el paso de personas.' },
+                { id: 'ta13', cat: 'Control de Acceso', label: 'Sistema de gafetes/credenciales', weight: 7, desc: 'Uso obligatorio y control de identidad mediante tarjetas inteligentes o biometría.' },
+                { id: 'ta14', cat: 'Control de Acceso', label: 'Gestión de visitantes', weight: 6, desc: 'Proceso de registro, emisión de pases temporales y escolta según nivel de riesgo.' },
+                { id: 'ta15', cat: 'Control de Acceso', label: 'Almacenamiento de registros de acceso', weight: 5, desc: 'Log digital de quién, por dónde y cuándo ingresó o salió de la instalación.' },
             ]
         },
         physical: {
@@ -39,20 +36,18 @@
             weight: 25,
             items: [
                 // Perimeter
-                { id: 'pa01', cat: 'Protección Perimetral', label: 'Altura y resistencia de cerca/muro', weight: 9 },
-                { id: 'pa02', cat: 'Protección Perimetral', label: 'Alambre de púas / concertina', weight: 6 },
-                { id: 'pa03', cat: 'Protección Perimetral', label: 'Sistemas de retardo exterior', weight: 5 },
-                { id: 'pa04', cat: 'Protección Perimetral', label: 'Zona despejada antes/después de cerca', weight: 7 },
-                { id: 'pa05', cat: 'Protección Perimetral', label: 'Iluminación perimetral', weight: 8 },
-                // Buildings
-                { id: 'pa06', cat: 'Protección de Edificios', label: 'Puertas reforzadas', weight: 8 },
-                { id: 'pa07', cat: 'Protección de Edificios', label: 'Calidad de cerraduras', weight: 7 },
-                { id: 'pa08', cat: 'Protección de Edificios', label: 'Protección de ventanas', weight: 6 },
-                { id: 'pa09', cat: 'Protección de Edificios', label: 'Refuerzo de salas sensibles', weight: 7 },
-                // Vehicle
-                { id: 'pa10', cat: 'Control Vehicular', label: 'Visibilidad del puesto de guardia', weight: 6 },
-                { id: 'pa11', cat: 'Control Vehicular', label: 'Sistema de barreras/topes', weight: 8 },
-                { id: 'pa12', cat: 'Control Vehicular', label: 'Área de inspección de camiones', weight: 7 },
+                { id: 'pa01', cat: 'Protección Perimetral', label: 'Altura y resistencia de cerca/muro', weight: 9, desc: 'Integridad estructural del cerramiento físico principal.' },
+                { id: 'pa02', cat: 'Protección Perimetral', label: 'Alambre de púas / concertina', weight: 6, desc: 'Elementos de disuasión y retraso en la parte superior del cierre perimetral.' },
+                { id: 'pa03', cat: 'Protección Perimetral', label: 'Sistemas de retardo exterior', weight: 5, desc: 'Presencia de zanjas, bermas o barreras físicas adicionales.' },
+                { id: 'pa04', cat: 'Protección Perimetral', label: 'Zona despejada antes/después de cerca', weight: 7, desc: 'Mantenimiento de áreas libres de vegetación o materiales que ayuden a la intrusión o reduzcan visibilidad.' },
+                { id: 'pa05', cat: 'Protección Perimetral', label: 'Iluminación perimetral', weight: 8, desc: 'Nivel lumínico suficiente para disuasión y captura de imágenes CCTV.' },
+                { id: 'pa06', cat: 'Protección de Edificios', label: 'Puertas reforzadas', weight: 8, desc: 'Puertas de seguridad en accesos principales y zonas restringidas.' },
+                { id: 'pa07', cat: 'Protección de Edificios', label: 'Calidad de cerraduras', weight: 7, desc: 'Uso de cerraduras de alta seguridad, cilindros anti-ganzúa y placas de protección.' },
+                { id: 'pa08', cat: 'Protección de Edificios', label: 'Protección de ventanas', weight: 6, desc: 'Presencia de láminas de seguridad, rejas o vidrios reforzados.' },
+                { id: 'pa09', cat: 'Protección de Edificios', label: 'Refuerzo de salas sensibles', weight: 7, desc: 'Protección especial para el site de IT, archivo confidencial o planta eléctrica.' },
+                { id: 'pa10', cat: 'Control Vehicular', label: 'Visibilidad del puesto de guardia', weight: 6, desc: 'Capacidad de los oficiales para observar el tráfico entrante y saliente sin obstrucciones.' },
+                { id: 'pa11', cat: 'Control Vehicular', label: 'Sistema de barreras/topes', weight: 8, desc: 'Mecanismos físicos para detener o demorar vehículos.' },
+                { id: 'pa12', cat: 'Control Vehicular', label: 'Área de inspección de camiones', weight: 7, desc: 'Espacio dedicado y seguro para la revisión de carga y documentos.' },
             ]
         },
         procedures: {
@@ -60,43 +55,42 @@
             weight: 20,
             items: [
                 // Documentation
-                { id: 'pr01', cat: 'Documentación de Seguridad', label: 'Plan de situación', weight: 6 },
-                { id: 'pr02', cat: 'Documentación de Seguridad', label: 'Plan de terreno', weight: 5 },
-                { id: 'pr03', cat: 'Documentación de Seguridad', label: 'Plan de control de acceso', weight: 7 },
-                { id: 'pr04', cat: 'Documentación de Seguridad', label: 'Plan de detección de intrusión', weight: 6 },
-                { id: 'pr05', cat: 'Documentación de Seguridad', label: 'Plan de CCTV', weight: 5 },
-                { id: 'pr06', cat: 'Documentación de Seguridad', label: 'Plan de evacuación', weight: 8 },
-                // Operational
-                { id: 'pr07', cat: 'Procedimientos Operativos', label: 'Procedimiento de reporte de incidentes', weight: 8 },
-                { id: 'pr08', cat: 'Procedimientos Operativos', label: 'Protocolo de respuesta a emergencias', weight: 9 },
-                { id: 'pr09', cat: 'Procedimientos Operativos', label: 'Procedimiento de visitantes', weight: 6 },
-                { id: 'pr10', cat: 'Procedimientos Operativos', label: 'Procedimiento de acceso de contratistas', weight: 7 },
-                { id: 'pr11', cat: 'Procedimientos Operativos', label: 'Procedimiento de gestión de llaves', weight: 6 },
+                { id: 'pr01', cat: 'Documentación de Seguridad', label: 'Plan de situación', weight: 6, desc: 'Mapa detallado de activos, amenazas y recursos de seguridad.' },
+                { id: 'pr02', cat: 'Documentación de Seguridad', label: 'Plan de terreno', weight: 5, desc: 'Distribución física y zonificación de seguridad del sitio.' },
+                { id: 'pr03', cat: 'Documentación de Seguridad', label: 'Plan de control de acceso', weight: 7, desc: 'Políticas escritas sobre quién puede entrar y en bajo qué condiciones.' },
+                { id: 'pr04', cat: 'Documentación de Seguridad', label: 'Plan de detección de intrusión', weight: 6, desc: 'Estrategia de despliegue y respuesta ante intentos de intrusión.' },
+                { id: 'pr05', cat: 'Documentación de Seguridad', label: 'Plan de CCTV', weight: 5, desc: 'Estándares de visualización, almacenamiento y auditoría de video.' },
+                { id: 'pr06', cat: 'Documentación de Seguridad', label: 'Plan de evacuación', weight: 8, desc: 'Protocolos de salida segura ante emergencias patrimoniales o naturales.' },
+                { id: 'pr07', cat: 'Procedimientos Operativos', label: 'Procedimiento de reporte de incidentes', weight: 8, desc: 'Formularios y canales para informar eventos de seguridad.' },
+                { id: 'pr08', cat: 'Procedimientos Operativos', label: 'Protocolo de respuesta a emergencias', weight: 9, desc: 'Acciones inmediatas ante robos, asaltos o intrusiones confirmadas.' },
+                { id: 'pr09', cat: 'Procedimientos Operativos', label: 'Procedimiento de visitantes', weight: 6, desc: 'Instrucciones para el control de externos.' },
+                { id: 'pr10', cat: 'Procedimientos Operativos', label: 'Procedimiento de acceso de contratistas', weight: 7, desc: 'Controles específicos para personal de empresas externas.' },
+                { id: 'pr11', cat: 'Procedimientos Operativos', label: 'Procedimiento de gestión de llaves', weight: 6, desc: 'Control de inventario, préstamo y custodia de llaves físicas.' },
             ]
         },
         hr: {
             label: 'Recursos Humanos',
             weight: 15,
             items: [
-                { id: 'hr01', cat: 'Guardas de Seguridad', label: 'Calidad en reclutamiento', weight: 8 },
-                { id: 'hr02', cat: 'Guardas de Seguridad', label: 'Certificación oficial', weight: 9 },
-                { id: 'hr03', cat: 'Guardas de Seguridad', label: 'Experiencia', weight: 7 },
-                { id: 'hr04', cat: 'Guardas de Seguridad', label: 'Capacitación básica en seguridad', weight: 8 },
-                { id: 'hr05', cat: 'Guardas de Seguridad', label: 'Capacitación específica del sitio', weight: 7 },
-                { id: 'hr06', cat: 'Guardas de Seguridad', label: 'Nivel de idioma', weight: 4 },
-                { id: 'hr07', cat: 'Guardas de Seguridad', label: 'Calidad de supervisión', weight: 8 },
-                { id: 'hr08', cat: 'Guardas de Seguridad', label: 'Adecuación de cobertura de turnos', weight: 9 },
+                { id: 'hr01', cat: 'Guardas de Seguridad', label: 'Calidad en reclutamiento', weight: 8, desc: 'Procesos de selección y validación de antecedentes.' },
+                { id: 'hr02', cat: 'Guardas de Seguridad', label: 'Certificación oficial', weight: 9, desc: 'Cumplimiento con carnets de seguridad privada vigentes.' },
+                { id: 'hr03', cat: 'Guardas de Seguridad', label: 'Experiencia', weight: 7, desc: 'Tiempo de servicio y conocimientos previos relevantes.' },
+                { id: 'hr04', cat: 'Guardas de Seguridad', label: 'Capacitación básica en seguridad', weight: 8, desc: 'Formación general en vigilancia y leyes locales.' },
+                { id: 'hr05', cat: 'Guardas de Seguridad', label: 'Capacitación específica del sitio', weight: 7, desc: 'Conocimiento de consignas particulares de la planta.' },
+                { id: 'hr06', cat: 'Guardas de Seguridad', label: 'Nivel de idioma', weight: 4, desc: 'Capacidad de comunicación básica (según necesidad del sitio).' },
+                { id: 'hr07', cat: 'Guardas de Seguridad', label: 'Calidad de supervisión', weight: 8, desc: 'Control efectivo sobre el desempeño de los guardas en campo.' },
+                { id: 'hr08', cat: 'Guardas de Seguridad', label: 'Adecuación de cobertura de turnos', weight: 9, desc: 'Personal suficiente para todas las posiciones críticas las 24h.' },
             ]
         },
         environment: {
             label: 'Entorno',
             weight: 10,
             items: [
-                { id: 'en01', cat: 'Comunidad Circundante', label: 'Calidad de contacto con comunidad', weight: 8 },
-                { id: 'en02', cat: 'Comunidad Circundante', label: 'Nivel de intercambio de información', weight: 6 },
-                { id: 'en03', cat: 'Comunidad Circundante', label: 'Nivel de crimen local', weight: 9 },
-                { id: 'en04', cat: 'Comunidad Circundante', label: 'Proximidad policial', weight: 8 },
-                { id: 'en05', cat: 'Comunidad Circundante', label: 'Tiempo de respuesta', weight: 7 },
+                { id: 'en01', cat: 'Comunidad Circundante', label: 'Calidad de contacto con comunidad', weight: 8, desc: 'Relación con líderes locales y vecinos para inteligencia compartida.' },
+                { id: 'en02', cat: 'Comunidad Circundante', label: 'Nivel de intercambio de información', weight: 6, desc: 'Fluidez de datos sobre riesgos externos con otras empresas cercanas.' },
+                { id: 'en03', cat: 'Comunidad Circundante', label: 'Nivel de crimen local', weight: 9, desc: 'Incidencia delictiva en el cuadrante externo inmediato.' },
+                { id: 'en04', cat: 'Comunidad Circundante', label: 'Proximidad policial', weight: 8, desc: 'Distancia a la delegación de Fuerza Pública u OIJ más cercana.' },
+                { id: 'en05', cat: 'Comunidad Circundante', label: 'Tiempo de respuesta', weight: 7, desc: 'Estimación real de llegada de autoridades ante una alerta.' },
             ]
         }
     };
@@ -199,7 +193,13 @@
             tbody.innerHTML = items.map(item => `
                 <tr id="row-${item.id}">
                     <td>
-                        <div style="font-weight:700; color:var(--navy-black);">${item.cat}</div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="font-weight:700; color:var(--navy-black);">${item.cat}</div>
+                            <i class="fas fa-info-circle" 
+                               style="color: var(--primary-teal); cursor: pointer; font-size: 0.8rem;" 
+                               onclick="window.showAuditItemInfo('${modKey}', '${item.id}')"
+                               title="Click para ver explicación"></i>
+                        </div>
                         <div style="font-size:0.75rem; color:var(--text-muted);">${item.label}</div>
                     </td>
                     <td style="text-align:center; font-weight:700; color:var(--primary-teal);">${item.weight}</td>
@@ -250,7 +250,6 @@
         autosaveAudit();
         window.recalcAll();
     };
-
     window.toggleItemRow = function (itemId, isApplicable) {
         const row = document.getElementById(`row-${itemId}`);
         if (!row) return;
@@ -261,6 +260,26 @@
             row.style.opacity = '0.4';
             row.style.background = '#f1f5f9';
         }
+    };
+
+    window.showAuditItemInfo = function (moduleKey, itemId) {
+        const item = AUDIT_MODULES[moduleKey].items.find(i => i.id === itemId);
+        if (!item) return;
+
+        const modal = document.getElementById('modal-audit-info');
+        const title = document.getElementById('audit-info-title');
+        const desc = document.getElementById('audit-info-desc');
+
+        if (modal && title && desc) {
+            title.textContent = item.label;
+            desc.textContent = item.desc || "No hay descripción disponible para este ítem.";
+            modal.style.display = 'flex';
+        }
+    };
+
+    window.closeAuditInfoModal = function () {
+        const modal = document.getElementById('modal-audit-info');
+        if (modal) modal.style.display = 'none';
     };
 
     function bindAuditEvents() {
@@ -580,7 +599,7 @@
     }
 
     function renderRiskHeatmap() {
-        const grid = document.getElementById('risk-heatmap-grid');
+        const grid = document.getElementById('risk-heatmap-container');
         if (!grid) return;
         // 5×5 heat map cells
         const cells = [];
@@ -638,12 +657,11 @@
         const generalRecs = document.getElementById('audit-general-recommendations')?.value || '';
 
         function drawGradientHeader(pdf, yPos, title) {
-            // Corporate Gradient: Green -> Teal -> Blue -> Navy
+            // Corporate Blue Gradient: Azure -> Blue -> Navy
             const colors = [
-                [74, 222, 128],  // Green
-                [13, 148, 136],  // Teal
+                [0, 156, 189],   // Holcim Azure
                 [37, 99, 235],   // Blue
-                [30, 41, 59]     // Navy
+                [30, 41, 59]     // Navy Black
             ];
 
             // Refined drawing: use larger segments with overlap to prevent gaps
