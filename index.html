@@ -48,7 +48,6 @@
     <header class="header-top">
         <div class="logo-section">
             <div class="holcim-logo-icon"></div>
-            <div class="holcim-logo-text">HOLCIM</div>
             <div id="header-site-name"
                 style="margin-left: 1rem; padding-left: 1rem; border-left: 1px solid var(--border-gray); color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
                 CENTRO DE TRABAJO SEGURIDAD PATRIMONIAL <span
@@ -192,10 +191,21 @@
         </div>
     </div>
 
+    <!-- Inactivity Lock Overlay -->
+    <div id="inactivity-overlay">
+        <div class="login-card" style="box-shadow: none; border: none; background: transparent;">
+            <h2 style="margin-top: 20px;">SESIÓN BLOQUEADA</h2>
+            <p>Por seguridad, el sistema se ha bloqueado debido a inactividad.</p>
+            <button class="btn-login-premium" onclick="window.unlockSystem()" style="margin-top: 30px; width: 220px;">
+                <span>REANUDAR SESIÓN</span>
+                <i class="fas fa-unlock"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- Premium Login System -->
     <div id="login-overlay">
         <div class="login-card">
-            <div class="holcim-logo-icon"></div>
             <h2 data-i18n="login_title">SEGURIDAD PATRIMONIAL</h2>
             <p style="font-weight: 800; color: var(--primary-teal); margin-top: -10px; margin-bottom: 20px;">VERSIÓN 1.0
             </p>

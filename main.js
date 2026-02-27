@@ -5245,6 +5245,40 @@ document.addEventListener('DOMContentLoaded', function () {
         window.checkExtraAuthAlerts();
     }, 1000);
 
+    // --- INACTIVITY MONITOR (2 MINUTES) ---
+    let inactivityTimer;
+    const INACTIVITY_TIME = 2 * 60 * 1000; // 2 minutes
+
+    window.resetInactivityTimer = () => {
+        if (localStorage.getItem('holcim_session')) {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(window.lockSystem, INACTIVITY_TIME);
+        }
+    };
+
+    window.lockSystem = () => {
+        const overlay = document.getElementById('inactivity-overlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+    };
+
+    window.unlockSystem = () => {
+        const overlay = document.getElementById('inactivity-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+        window.resetInactivityTimer();
+    };
+
+    // Listen for activity
+    ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(name => {
+        document.addEventListener(name, window.resetInactivityTimer, true);
+    });
+
+    // Initialize timer
+    window.resetInactivityTimer();
+
     // Periodic checks
     setInterval(window.checkExtraAuthAlerts, 60000); // Check every minute
 });
