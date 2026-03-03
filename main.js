@@ -5535,6 +5535,55 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initialize timer
     window.resetInactivityTimer();
 
+    // --- USER LOCATION FEATURE ---
+    window.userLocationMarker = null;
+    window.centerOnUserLocation = function () {
+        if (!navigator.geolocation) {
+            showNotification('GEOLOCALIZACIÓN NO SOPORTADA POR EL NAVEGADOR', 'error');
+            return;
+        }
+
+        showNotification('OBTENIENDO UBICACIÓN...', 'info');
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+
+                if (!window.zonesMap) {
+                    showNotification('EL MAPA NO ESTÁ INICIALIZADO', 'warning');
+                    return;
+                }
+
+                window.zonesMap.flyTo([latitude, longitude], 18);
+
+                // Add or update marker
+                if (window.userLocationMarker) {
+                    window.userLocationMarker.setLatLng([latitude, longitude]);
+                } else {
+                    const userIcon = L.divIcon({
+                        className: 'user-location-icon',
+                        html: '<div style="background:var(--red-holcim); width:15px; height:15px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.5);"></div>',
+                        iconSize: [15, 15],
+                        iconAnchor: [7, 7]
+                    });
+                    window.userLocationMarker = L.marker([latitude, longitude], { icon: userIcon }).addTo(window.zonesMap);
+                    window.userLocationMarker.bindPopup("<b>Usted está aquí</b>").openPopup();
+                }
+
+                showNotification('UBICACIÓN ENCONTRADA', 'success');
+            },
+            (error) => {
+                let msg = 'ERROR AL OBTENER UBICACIÓN';
+                if (error.code === 1) msg = 'PERMISO DE UBICACIÓN DENEGADO';
+                else if (error.code === 2) msg = 'UBICACIÓN NO DISPONIBLE';
+                else if (error.code === 3) msg = 'TIEMPO DE ESPERA AGOTADO';
+                showNotification(msg, 'error');
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    };
+
     // Periodic checks
     setInterval(window.checkExtraAuthAlerts, 60000); // Check every minute
 });
+
