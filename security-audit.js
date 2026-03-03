@@ -180,9 +180,25 @@
 
         bindAuditEvents();
         window.recalcAll();
+        updateAuditEvidenceCounts();
         // Don't switch tab here if we are already in one, but usually it's the first load
         // window.switchAuditTab('audit-intro');
     };
+
+    function updateAuditEvidenceCounts() {
+        const auditData = JSON.parse(localStorage.getItem(getAuditKey()) || '{}');
+        const evidenceMap = auditData.evidence || {};
+
+        Object.keys(AUDIT_MODULES).forEach(modKey => {
+            AUDIT_MODULES[modKey].items.forEach(item => {
+                const countSpan = document.getElementById(`evidence-count-${item.id}`);
+                if (countSpan) {
+                    const count = (evidenceMap[item.id] || []).length;
+                    countSpan.textContent = count;
+                }
+            });
+        });
+    }
 
     function renderAuditSections() {
         Object.keys(AUDIT_MODULES).forEach(modKey => {
@@ -195,12 +211,17 @@
                     <td>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <div style="font-weight:700; color:var(--navy-black);">${item.cat}</div>
-                            <i class="fas fa-info-circle" 
-                               style="color: var(--primary-teal); cursor: pointer; font-size: 0.8rem;" 
+                            <i class="fas fa-info-circle"
+                               style="color: var(--primary-teal); cursor: pointer; font-size: 0.8rem;"
                                onclick="window.showAuditItemInfo('${modKey}', '${item.id}')"
                                title="Click para ver explicación"></i>
                         </div>
                         <div style="font-size:0.75rem; color:var(--text-muted);">${item.label}</div>
+                        <div style="margin-top:5px; display:flex; gap:10px; align-items:center;">
+                            <button onclick="window.openAuditEvidence('${item.id}', '${item.label}')" style="background:none; border:none; color:var(--primary-teal); font-size:0.75rem; cursor:pointer; padding:0; text-decoration:underline;">
+                                <i class="fas fa-camera"></i> Evidencia (<span id="evidence-count-${item.id}">0</span>)
+                            </button>
+                        </div>
                     </td>
                     <td style="text-align:center; font-weight:700; color:var(--primary-teal);">${item.weight}</td>
                     <td style="text-align:center;">
@@ -781,6 +802,12 @@
             doc.text(String(r.maxImpact || 0), 138, y);
             doc.text(`${r.equalised}%`, 170, y);
             y += 7;
+            // Risk Legend
+            y += 2;
+            doc.setFontSize(7);
+            doc.setTextColor(100, 100, 100);
+            doc.text("* Riesgo Final = Promedio de Probabilidades (Historial, Amenaza, Vulnerab.) x Máximo Impacto detectado.", 14, y);
+            y += 5;
         });
 
         // Detailed Comments Section
@@ -963,6 +990,118 @@
             }
 
             alert('Auditoría reiniciada.');
+        }
+    };
+
+
+    // ─── EVIDENCE MANAGEMENT (PHOTO/DOCS) ─────────────────────────────────────────
+    window.currentEvidenceItemId = null;
+
+    window.openAuditEvidence = function (itemId, label) {
+        window.currentEvidenceItemId = itemId;
+        document.getElementById('evidence-item-label').textContent = label;
+        document.getElementById('evidence-item-id').textContent = `ID: ${itemId}`;
+        document.getElementById('modal-audit-evidence').style.display = 'flex';
+        renderAuditEvidenceList();
+    };
+
+    function renderAuditEvidenceList() {
+        const itemId = window.currentEvidenceItemId;
+        const container = document.getElementById('audit-evidence-list');
+        if (!container) return;
+
+        const auditData = JSON.parse(localStorage.getItem(getAuditKey()) || '{}');
+        const evidenceArr = (auditData.evidence && auditData.evidence[itemId]) ? auditData.evidence[itemId] : [];
+
+        // Update counts in the UI
+        const countSpan = document.getElementById(`evidence-count-${itemId}`);
+        if (countSpan) countSpan.textContent = evidenceArr.length;
+
+        if (evidenceArr.length === 0) {
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--text-muted);">No hay evidencia cargada.</div>';
+            return;
+        }
+
+        container.innerHTML = evidenceArr.map((ev, idx) => {
+            const isImage = ev.type.startsWith('image/');
+            const icon = isImage ? '' : (ev.type.includes('pdf') ? 'fa-file-pdf' : 'fa-file-word');
+            return `
+                <div class="evidence-card" style="border:1px solid #eee; border-radius:12px; overflow:hidden; position:relative; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+                    ${isImage ?
+                    `<img src="${ev.data}" style="width:100%; height:100px; object-fit:cover;">` :
+                    `<div style="height:100px; display:flex; align-items:center; justify-content:center; background:#f8fafc; font-size:2rem; color:var(--primary-teal);">
+                             <i class="fas ${icon}"></i>
+                         </div>`
+                }
+                    <div style="padding:8px; font-size:0.7rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-top:1px solid #f0f0f0;">${ev.name}</div>
+                    <div style="padding:5px; background: #fafafa; display:flex; gap:5px;">
+                         <button onclick="window.viewAuditEvidence(${idx})" style="flex:1; font-size:0.6rem; padding:4px; cursor:pointer; background:#fff; border:1px solid #ddd; border-radius:4px;"><i class="fas fa-eye"></i></button>
+                         <button onclick="window.deleteAuditEvidence(${idx})" style="flex:1; font-size:0.6rem; padding:4px; cursor:pointer; background:#fff; border:1px solid #ffccd5; border-radius:4px; color:var(--red-holcim);"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    window.uploadAuditEvidence = function () {
+        const input = document.getElementById('audit-evidence-input');
+        if (!input.files || input.files.length === 0) {
+            if (window.showNotification) window.showNotification('Seleccione un archivo', 'warning');
+            else alert('Seleccione un archivo');
+            return;
+        }
+
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const base64 = e.target.result;
+            const itemId = window.currentEvidenceItemId;
+            const auditData = JSON.parse(localStorage.getItem(getAuditKey()) || '{}');
+
+            if (!auditData.evidence) auditData.evidence = {};
+            if (!auditData.evidence[itemId]) auditData.evidence[itemId] = [];
+
+            auditData.evidence[itemId].push({
+                name: file.name,
+                type: file.type,
+                data: base64,
+                timestamp: new Date().toISOString()
+            });
+
+            localStorage.setItem(getAuditKey(), JSON.stringify(auditData));
+            if (window.showNotification) window.showNotification('EVIDENCIA CARGADA', 'success');
+            input.value = '';
+            renderAuditEvidenceList();
+        };
+
+        reader.readAsDataURL(file);
+    };
+
+    window.deleteAuditEvidence = function (index) {
+        if (!confirm('¿Eliminar esta evidencia?')) return;
+        const itemId = window.currentEvidenceItemId;
+        const auditData = JSON.parse(localStorage.getItem(getAuditKey()) || '{}');
+
+        if (auditData.evidence && auditData.evidence[itemId]) {
+            auditData.evidence[itemId].splice(index, 1);
+            localStorage.setItem(getAuditKey(), JSON.stringify(auditData));
+            renderAuditEvidenceList();
+        }
+    };
+
+    window.viewAuditEvidence = function (index) {
+        const itemId = window.currentEvidenceItemId;
+        const auditData = JSON.parse(localStorage.getItem(getAuditKey()) || '{}');
+        const ev = auditData.evidence[itemId][index];
+
+        if (ev) {
+            const win = window.open();
+            if (ev.type.startsWith('image/')) {
+                win.document.write(`<img src="${ev.data}" style="max-width:100%">`);
+            } else {
+                win.location.href = ev.data;
+            }
         }
     };
 
