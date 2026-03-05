@@ -1090,9 +1090,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (changed) {
                 localStorage.setItem(ak, JSON.stringify(auths));
                 showNotification('AUTORIZACIÓN ACTUALIZADA', 'success');
-                addLogEvent('AUTORIZACIÓN', `Editada: ${auth.name}`);
-            } else {
-                showNotification('SIN CAMBIOS DETECTADOS', 'info');
             }
             document.getElementById('modal-edit-auth').style.display = 'none';
             renderAuthList();
@@ -1637,47 +1634,32 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- CONSOLIDADO CONTRATISTAS ---
     window.renderMonthlyContractorConsolidated = function () {
         const logs = JSON.parse(localStorage.getItem(window.getSiteKey('holcim_access_logs')) || '[]');
-        const start = document.getElementById('filter-date-start')?.value;
-        const end = document.getElementById('filter-date-end')?.value;
-
-        const contractors = logs.filter(l => {
-            const matchesType = l.visitorType === 'CONTRATISTA' && l.exitTime;
-            const logDate = l.entryTime.split('T')[0];
-            const matchesDate = (!start || logDate >= start) && (!end || logDate <= end);
-            return matchesType && matchesDate;
-        });
-
+        const contractors = logs.filter(l => l.visitorType === 'CONTRATISTA' && l.exitTime);
         const summary = {};
         contractors.forEach(l => {
             const date = new Date(l.entryTime);
             const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
-            const monthName = date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
-            if (!summary[key]) summary[key] = { month: monthName, hours: 0, count: 0 };
+            if (!summary[key]) summary[key] = { month: date.toLocaleString('es-ES', { month: 'long', year: 'numeric' }), hours: 0, count: 0 };
             const h = (new Date(l.exitTime) - date) / 3600000;
             summary[key].hours += h;
             summary[key].count += 1;
         });
-
         const body = document.getElementById('contractor-consolidated-body');
         if (body) {
-            if (Object.keys(summary).length === 0) {
-                body.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--text-muted);">No hay registros de contratistas para el periodo seleccionado.</div>';
-            } else {
-                body.innerHTML = `
-                    <div class="list-head" style="grid-template-columns: 1fr 150px 100px;">
-                        <span>Mes</span><span>Horas Totales</span><span>Registros</span>
-                    </div>
-                ` + Object.values(summary).sort((a, b) => b.month.localeCompare(a.month)).map(s => `
-                    <div class="list-row" style="grid-template-columns: 1fr 150px 100px;">
-                        <span style="text-transform:capitalize; font-weight:700">${s.month}</span>
-                        <span style="font-weight:700; color:var(--primary-teal)">${s.hours.toFixed(1)}h</span>
-                        <span>${s.count}</span>
-                    </div>
-                `).join('');
-            }
+            body.innerHTML = `
+                <div class="list-head" style="grid-template-columns: 1fr 150px 100px;">
+                    <span>Mes</span><span>Horas Totales</span><span>Registros</span>
+                </div>
+            ` + Object.values(summary).map(s => `
+                <div class="list-row" style="grid-template-columns: 1fr 150px 100px;">
+                    <span style="text-transform:capitalize; font-weight:700">${s.month}</span>
+                    <span style="font-weight:700; color:var(--primary-teal)">${s.hours.toFixed(1)}h</span>
+                    <span>${s.count}</span>
+                </div>
+            `).join('');
         }
         document.getElementById('modal-contractor-hours').style.display = 'flex';
-        document.getElementById('contractor-report-month').textContent = start && end ? `Periodo: ${start} - ${end}` : 'Acumulado Total Histórico';
+        document.getElementById('contractor-report-month').textContent = 'Acumulado Total Histórico';
     };
 
     // --- REPORTS & PDF ---
@@ -3563,13 +3545,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const clearBtn = document.getElementById('btn-picker-clear');
         if (clearBtn) clearBtn.style.display = (window.pickerMode === 'polygon') ? 'block' : 'none';
 
-        const geoToggle = document.getElementById('btn-toggle-geo');
-        if (geoToggle) {
-            geoToggle.style.display = (window.pickerMode === 'polygon') ? 'block' : 'none';
-            geoToggle.textContent = 'MODO GEOMÉTRICO';
-            document.getElementById('geometric-controls').style.display = 'none';
-        }
-
         if (!window.pickerMap) {
             window.pickerMap = L.map('picker-map').setView([9.9281, -84.0907], 16);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window.pickerMap);
@@ -3622,53 +3597,6 @@ document.addEventListener('DOMContentLoaded', function () {
     window.closeMapPicker = function () {
         const modal = document.getElementById('modal-map-picker');
         if (modal) modal.style.display = 'none';
-    };
-
-    window.toggleGeoMode = function () {
-        const controls = document.getElementById('geometric-controls');
-        const btn = document.getElementById('btn-toggle-geo');
-        if (controls.style.display === 'none') {
-            controls.style.display = 'block';
-            btn.textContent = 'MODO MANUAL';
-            window.clearMapPickerPoints();
-        } else {
-            controls.style.display = 'none';
-            btn.textContent = 'MODO GEOMÉTRICO';
-        }
-    };
-
-    window.generateGeometricPolygon = function () {
-        if (!window.pickerMap) return;
-        const center = window.pickerMap.getCenter();
-        const n = parseInt(document.getElementById('geo-sides').value) || 4;
-        const radius = parseFloat(document.getElementById('geo-radius').value) || 50;
-        const azimuth = parseFloat(document.getElementById('geo-azimuth').value) || 0;
-
-        window.polygonPoints = [];
-        const R = 6378137; // Earth's radius in meters
-
-        for (let i = 0; i < n; i++) {
-            const angle = (360 / n) * i + azimuth;
-            const bearing = (angle * Math.PI) / 180;
-            const dist = radius / R;
-
-            const lat1 = (center.lat * Math.PI) / 180;
-            const lon1 = (center.lng * Math.PI) / 180;
-
-            const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dist) + Math.cos(lat1) * Math.sin(dist) * Math.cos(bearing));
-            const lon2 = lon1 + Math.atan2(Math.sin(bearing) * Math.sin(dist) * Math.cos(lat1), Math.cos(dist) - Math.sin(lat1) * Math.sin(lat2));
-
-            window.polygonPoints.push([(lat2 * 180) / Math.PI, (lon2 * 180) / Math.PI]);
-        }
-
-        if (window.pickerPolygon) window.pickerMap.removeLayer(window.pickerPolygon);
-        window.pickerPolygon = L.polygon(window.polygonPoints, {
-            color: 'var(--red-holcim)',
-            fillColor: 'var(--red-holcim)',
-            fillOpacity: 0.3
-        }).addTo(window.pickerMap);
-
-        document.getElementById('picker-coords-display').textContent = `Puntos (Geo): ${window.polygonPoints.length}`;
     };
 
     window.confirmMapPickerSelection = function () {
@@ -4122,61 +4050,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.riskLayers = {};
     window.cctvLayer = null;
     window.apLayer = null;
-    window.userLocationMarker = null;
     window.mapSelectionMode = null; // { type: 'cctv'|'ap', id: ... }
-
-    window.centerOnUserLocation = function () {
-        if (!window.zonesMap) return;
-
-        if (!navigator.geolocation) {
-            alert("Tu navegador no soporta geolocalización.");
-            return;
-        }
-
-        const btn = event.currentTarget;
-        const originalContent = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Localizando...';
-        btn.disabled = true;
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                const latlng = [latitude, longitude];
-
-                // Remove existing marker if any
-                if (window.userLocationMarker) {
-                    window.zonesMap.removeLayer(window.userLocationMarker);
-                }
-
-                // Add distinctive marker
-                window.userLocationMarker = L.marker(latlng, {
-                    icon: L.divIcon({
-                        className: 'user-location-marker',
-                        html: '<div style="background:var(--red-holcim); width:15px; height:15px; border-radius:50%; border:3px solid white; box-shadow:0 0 5px rgba(0,0,0,0.5);"></div>',
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
-                }).addTo(window.zonesMap);
-
-                window.userLocationMarker.bindPopup("<b>Tu ubicación actual</b>").openPopup();
-
-                window.zonesMap.setView(latlng, 17);
-
-                btn.innerHTML = originalContent;
-                btn.disabled = false;
-            },
-            (error) => {
-                btn.innerHTML = originalContent;
-                btn.disabled = false;
-                let msg = "Error al obtener ubicación.";
-                if (error.code === 1) msg = "Permiso de ubicación denegado.";
-                else if (error.code === 2) msg = "Ubicación no disponible.";
-                else if (error.code === 3) msg = "Tiempo de espera agotado.";
-                alert(msg);
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    };
 
     window.initSecurityZonesMap = function () {
         if (window.zonesMap) {
@@ -4221,10 +4095,6 @@ document.addEventListener('DOMContentLoaded', function () {
         };
         L.control.layers(baseLayers, overlayLayers).addTo(window.zonesMap);
 
-        // --- Improved Drawing Logic Variables ---
-        window._isDraggingSegment = false;
-        window._tempPreviewLine = null;
-
         // Map Click & Context Menu Logic
         window.zonesMap.on('contextmenu', function (e) {
             if (window._isDrawingPerimeter) {
@@ -4244,77 +4114,17 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Toggle map dragging based on drawing mode
-        window.updateMapInteractions = () => {
-            if (window._isDrawingPerimeter) {
-                window.zonesMap.dragging.disable();
-                window.zonesMap.getContainer().style.cursor = 'crosshair';
-            } else {
-                window.zonesMap.dragging.enable();
-                window.zonesMap.getContainer().style.cursor = '';
-            }
-        };
-
-        window.zonesMap.on('mousedown', function (e) {
-            if (!window._isDrawingPerimeter) return;
-            if (e.originalEvent.button !== 0) return; // Only left click
-
-            window._isDraggingSegment = true;
-
-            // If it's the very first point, add it now
-            if (window._currentPerimeterPoints.length === 0) {
-                window._currentPerimeterPoints.push(e.latlng);
-                if (window._currentPerimeterLine) window.zonesMap.removeLayer(window._currentPerimeterLine);
-                window._currentPerimeterLine = L.polyline(window._currentPerimeterPoints, { color: '#f59e0b', dashArray: '5, 5' }).addTo(window.zonesMap);
-            }
-        });
-
-        window.zonesMap.on('mousemove', function (e) {
-            if (!window._isDrawingPerimeter || !window._isDraggingSegment) return;
-            if (window._currentPerimeterPoints.length === 0) return;
-
-            const lastPoint = window._currentPerimeterPoints[window._currentPerimeterPoints.length - 1];
-
-            if (window._tempPreviewLine) {
-                window.zonesMap.removeLayer(window._tempPreviewLine);
-            }
-
-            // Draw rubber-band line from last point to current mouse
-            window._tempPreviewLine = L.polyline([lastPoint, e.latlng], {
-                color: '#f59e0b',
-                weight: 2,
-                dashArray: '5, 10',
-                opacity: 0.7
-            }).addTo(window.zonesMap);
-        });
-
-        window.zonesMap.on('mouseup', function (e) {
-            if (!window._isDrawingPerimeter || !window._isDraggingSegment) return;
-            window._isDraggingSegment = false;
-
-            if (window._tempPreviewLine) {
-                window.zonesMap.removeLayer(window._tempPreviewLine);
-                window._tempPreviewLine = null;
-            }
-
-            // Check if we actually moved enough to count as a new point
-            const lastPoint = window._currentPerimeterPoints[window._currentPerimeterPoints.length - 1];
-            if (lastPoint && (lastPoint.lat !== e.latlng.lat || lastPoint.lng !== e.latlng.lng)) {
-                window._currentPerimeterPoints.push(e.latlng);
-                if (window._currentPerimeterLine) {
-                    window.zonesMap.removeLayer(window._currentPerimeterLine);
-                }
-                window._currentPerimeterLine = L.polyline(window._currentPerimeterPoints, { color: '#f59e0b', dashArray: '5, 5' }).addTo(window.zonesMap);
-            }
-        });
-
         // Hide context menu on normal click
         window.zonesMap.on('click', function (e) {
             const menu = document.getElementById('map-context-menu');
             if (menu) menu.style.display = 'none';
 
             if (window._isDrawingPerimeter) {
-                // Point addition is now handled by mousedown/mouseup logic
+                window._currentPerimeterPoints.push(e.latlng);
+                if (window._currentPerimeterLine) {
+                    window.zonesMap.removeLayer(window._currentPerimeterLine);
+                }
+                window._currentPerimeterLine = L.polyline(window._currentPerimeterPoints, { color: '#f59e0b', dashArray: '5, 5' }).addTo(window.zonesMap);
                 return;
             }
 
@@ -4741,62 +4551,13 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (action === 'perimetro') {
             window._isDrawingPerimeter = true;
             window._currentPerimeterPoints = [latlng];
-            if (window.updateMapInteractions) window.updateMapInteractions();
             showNotification('HAGA CLIC EN EL MAPA PARA DIBUJAR. DOBLE CLIC PARA FINALIZAR.', 'info', 5000);
-        } else if (action === 'perimetro_geo') {
-            const modal = document.getElementById('modal-geo-perimeter-params');
-            if (modal) modal.style.display = 'flex';
         }
-    };
-
-    window.confirmGeoPerimeter = function () {
-        const center = window._lastMapContextClick;
-        if (!center) return;
-
-        const n = parseInt(document.getElementById('pgeo-sides').value) || 3;
-        const radius = parseFloat(document.getElementById('pgeo-radius').value) || 50;
-        const azimuth = parseFloat(document.getElementById('pgeo-azimuth').value) || 0;
-
-        window._currentPerimeterPoints = [];
-        const R = 6378137; // Earth's radius in meters
-
-        for (let i = 0; i < n; i++) {
-            const angle = (360 / n) * i + azimuth;
-            const bearing = (angle * Math.PI) / 180;
-            const dist = radius / R;
-
-            const lat1 = (center.lat * Math.PI) / 180;
-            const lon1 = (center.lng * Math.PI) / 180;
-
-            const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dist) + Math.cos(lat1) * Math.sin(dist) * Math.cos(bearing));
-            const lon2 = lon1 + Math.atan2(Math.sin(bearing) * Math.sin(dist) * Math.cos(lat1), Math.cos(dist) - Math.sin(lat1) * Math.sin(lat2));
-
-            window._currentPerimeterPoints.push({
-                lat: (lat2 * 180) / Math.PI,
-                lng: (lon2 * 180) / Math.PI
-            });
-        }
-
-        // Close params modal and open note modal to save
-        document.getElementById('modal-geo-perimeter-params').style.display = 'none';
-
-        // Pre-visualize if possible
-        if (window.zonesMap) {
-            if (window._currentPerimeterLine) window.zonesMap.removeLayer(window._currentPerimeterLine);
-            window._currentPerimeterLine = L.polygon(window._currentPerimeterPoints.map(p => [p.lat, p.lng]), {
-                color: '#f59e0b',
-                fillOpacity: 0.2
-            }).addTo(window.zonesMap);
-        }
-
-        document.getElementById('perimeter-form').reset();
-        document.getElementById('modal-perimeter-note').style.display = 'flex';
     };
 
     window.cancelPerimeter = function () {
         document.getElementById('modal-perimeter-note').style.display = 'none';
         window._isDrawingPerimeter = false;
-        if (window.updateMapInteractions) window.updateMapInteractions();
         if (window._currentPerimeterLine && window.zonesMap) {
             window.zonesMap.removeLayer(window._currentPerimeterLine);
         }
@@ -4834,7 +4595,6 @@ document.addEventListener('DOMContentLoaded', function () {
             localStorage.setItem(window.getSiteKey('holcim_map_perimeters'), JSON.stringify(perimeters));
             document.getElementById('modal-perimeter-note').style.display = 'none';
             window._isDrawingPerimeter = false;
-            if (window.updateMapInteractions) window.updateMapInteractions();
             window._currentPerimeterPoints = [];
             if (window._currentPerimeterLine) window.zonesMap.removeLayer(window._currentPerimeterLine);
             window._currentPerimeterLine = null;
@@ -5465,30 +5225,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const expiredAuths = auths.filter(a => {
+        const hasExpired = auths.some(a => {
             const expDate = new Date(a.dateEnd);
             return expDate < today;
         });
 
-        const hasExpired = expiredAuths.length > 0;
         const navLink = document.querySelector('[data-view="extra-auth"]');
         if (navLink) {
             navLink.classList.toggle('nav-blink-red', hasExpired);
-            if (hasExpired) {
-                // Add a small badge if possible or just the red color
-                navLink.style.color = 'var(--red-holcim)';
-            } else {
-                navLink.style.color = '';
-            }
-        }
-
-        const dashboardCounter = document.getElementById('count-auth-alerts');
-        if (dashboardCounter) {
-            dashboardCounter.textContent = expiredAuths.length;
-            const parentCard = dashboardCounter.closest('.card-stat');
-            if (parentCard) {
-                parentCard.classList.toggle('pulse-active', hasExpired);
-            }
         }
     };
 
@@ -5535,55 +5279,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initialize timer
     window.resetInactivityTimer();
 
-    // --- USER LOCATION FEATURE ---
-    window.userLocationMarker = null;
-    window.centerOnUserLocation = function () {
-        if (!navigator.geolocation) {
-            showNotification('GEOLOCALIZACIÓN NO SOPORTADA POR EL NAVEGADOR', 'error');
-            return;
-        }
-
-        showNotification('OBTENIENDO UBICACIÓN...', 'info');
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-
-                if (!window.zonesMap) {
-                    showNotification('EL MAPA NO ESTÁ INICIALIZADO', 'warning');
-                    return;
-                }
-
-                window.zonesMap.flyTo([latitude, longitude], 18);
-
-                // Add or update marker
-                if (window.userLocationMarker) {
-                    window.userLocationMarker.setLatLng([latitude, longitude]);
-                } else {
-                    const userIcon = L.divIcon({
-                        className: 'user-location-icon',
-                        html: '<div style="background:var(--red-holcim); width:15px; height:15px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.5);"></div>',
-                        iconSize: [15, 15],
-                        iconAnchor: [7, 7]
-                    });
-                    window.userLocationMarker = L.marker([latitude, longitude], { icon: userIcon }).addTo(window.zonesMap);
-                    window.userLocationMarker.bindPopup("<b>Usted está aquí</b>").openPopup();
-                }
-
-                showNotification('UBICACIÓN ENCONTRADA', 'success');
-            },
-            (error) => {
-                let msg = 'ERROR AL OBTENER UBICACIÓN';
-                if (error.code === 1) msg = 'PERMISO DE UBICACIÓN DENEGADO';
-                else if (error.code === 2) msg = 'UBICACIÓN NO DISPONIBLE';
-                else if (error.code === 3) msg = 'TIEMPO DE ESPERA AGOTADO';
-                showNotification(msg, 'error');
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
-    };
-
     // Periodic checks
     setInterval(window.checkExtraAuthAlerts, 60000); // Check every minute
 });
-

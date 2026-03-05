@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -399,14 +399,6 @@
                                 <div class="stat-value red-text" id="count-alerts">0</div>
                             </div>
                             <i class="fas fa-exclamation-triangle stat-icon" style="color: var(--red-holcim);"></i>
-                        </div>
-                        <div class="card-stat" style="border-top: 4px solid var(--red-holcim); background: #FEF2F2;"
-                            onclick="switchView('extra-auth')">
-                            <div class="stat-content">
-                                <h4 style="color: var(--red-holcim);">Alertas Autoriz.</h4>
-                                <div class="stat-value" id="count-auth-alerts" style="color: var(--red-holcim);">0</div>
-                            </div>
-                            <i class="fas fa-user-clock stat-icon" style="color: var(--red-holcim); opacity:0.2"></i>
                         </div>
                     </div>
 
@@ -1442,16 +1434,17 @@
                         </div>
                     </div>
                     <div class="panel-body" style="padding: 1rem;">
-                        <div style="position: relative;">
-                            <div id="security-zones-map"
-                                style="width: 100%; height: 75vh; border-radius: 12px; border: 2px solid var(--border-gray); z-index: 1;">
+                        <div id="security-zones-map"
+                            style="width: 100%; height: 75vh; border-radius: 12px; border: 2px solid var(--border-gray); z-index: 1;">
+                        </div>
+                        <!-- Recent Zone Logs (Compact) -->
+                        <div style="margin-top: 1.5rem;">
+                            <h4 style="font-size: 0.85rem; margin-bottom: 1rem;"><i
+                                    class="fas fa-clock-rotate-left"></i> Últimas Revisiones por Zona</h4>
+                            <div id="zone-mini-history"
+                                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
+                                <!-- Zone summaries populated via JS -->
                             </div>
-                            <!-- Control de Ubicación -->
-                            <button onclick="window.centerOnUserLocation()"
-                                style="position: absolute; bottom: 30px; right: 30px; z-index: 1000; background: white; border: 2px solid rgba(0,0,0,0.2); border-radius: 4px; padding: 8px 12px; cursor: pointer; color: #1e293b; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-location-crosshairs" style="color: var(--red-holcim);"></i> Mi
-                                Ubicación
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -1996,22 +1989,6 @@
             </div>
 
             <div id="audit-content-area" style="min-height: 60vh;">
-                <!-- GLOBAL SCORING GUIDE -->
-                <div id="audit-scoring-guide"
-                    style="margin-bottom: 1.5rem; padding: 1rem; border-left: 5px solid var(--primary-teal); background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <div
-                            style="background: rgba(0, 156, 189, 0.1); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary-teal);">
-                            <i class="fas fa-info-circle"></i>
-                        </div>
-                        <div>
-                            <h4 style="font-size: 0.8rem; color: var(--navy-black); margin: 0;">GUÍA DE PUNTUACIÓN
-                                (NIVEL DE CUMPLIMIENTO)</h4>
-                            <p style="font-size: 0.65rem; color: var(--text-muted); margin: 0;">1: 0% | 2: 25% | 3: 50%
-                                | 4: 85% | 5: 100%</p>
-                        </div>
-                    </div>
-                </div>
                 <!-- Tab: Introduction -->
                 <div id="audit-intro" class="audit-section-content active">
                     <div class="card-panel"
@@ -2062,8 +2039,8 @@
 
                 <!-- Tab: Site Data -->
                 <div id="audit-site" class="audit-section-content" style="display: none;">
-                    <div class="card-panel" style="padding: 1.2rem;">
-                        <div class="panel-header" style="border-bottom: 1px solid #eee; margin-bottom: 1rem;">
+                    <div class="card-panel">
+                        <div class="panel-header" style="border-bottom: 1px solid #eee; margin-bottom: 2rem;">
                             <h3><i class="fas fa-map-marked-alt"></i> Identificación del Sitio</h3>
                         </div>
                         <div class="panel-body">
@@ -2122,9 +2099,9 @@
 
                 <!-- Generic Evaluation Module Container -->
                 <div id="audit-technical" class="audit-section-content" style="display: none;">
-                    <div class="card-panel" style="padding: 1.5rem;">
+                    <div class="card-panel">
                         <div class="panel-header"
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fas fa-microchip"></i> 1. Evaluación de Activos Técnicos</h3>
                             <div class="module-score-badge" id="score-technical">Puntos: 0.0 / 10</div>
                         </div>
@@ -2145,7 +2122,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-panel" style="margin-top: 10px; padding: 1.2rem;">
+                    <div class="card-panel" style="margin-top: 20px; padding: 1.5rem;">
                         <h4 style="font-size: 0.8rem; margin-bottom: 1rem;"><i class="fas fa-comment-alt"></i>
                             COMENTARIOS Y OBSERVACIONES TÉCNICAS</h4>
                         <textarea id="audit-comments-technical" class="audit-textarea"
@@ -2154,7 +2131,7 @@
                 </div>
 
                 <div id="audit-physical" class="audit-section-content" style="display: none;">
-                    <div class="card-panel" style="padding: 1.2rem;">
+                    <div class="card-panel">
                         <div class="panel-header"
                             style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fas fa-building-shield"></i> 2. Evaluación de Activos Físicos</h3>
@@ -2177,7 +2154,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-panel" style="margin-top: 10px; padding: 1.2rem;">
+                    <div class="card-panel" style="margin-top: 20px; padding: 1.5rem;">
                         <h4 style="font-size: 0.8rem; margin-bottom: 1rem;"><i class="fas fa-comment-alt"></i>
                             COMENTARIOS Y OBSERVACIONES FÍSICAS</h4>
                         <textarea id="audit-comments-physical" class="audit-textarea"
@@ -2186,7 +2163,7 @@
                 </div>
 
                 <div id="audit-procedures" class="audit-section-content" style="display: none;">
-                    <div class="card-panel" style="padding: 1.2rem;">
+                    <div class="card-panel">
                         <div class="panel-header"
                             style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fas fa-file-circle-check"></i> 3. Gestión de Procedimientos</h3>
@@ -2209,7 +2186,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-panel" style="margin-top: 10px; padding: 1.2rem;">
+                    <div class="card-panel" style="margin-top: 20px; padding: 1.5rem;">
                         <h4 style="font-size: 0.8rem; margin-bottom: 1rem;"><i class="fas fa-comment-alt"></i>
                             COMENTARIOS Y OBSERVACIONES DE PROCEDIMIENTOS</h4>
                         <textarea id="audit-comments-procedures" class="audit-textarea"
@@ -2218,7 +2195,7 @@
                 </div>
 
                 <div id="audit-hr" class="audit-section-content" style="display: none;">
-                    <div class="card-panel" style="padding: 1.2rem;">
+                    <div class="card-panel">
                         <div class="panel-header"
                             style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fas fa-user-gear"></i> 4. Capital Humano de Seguridad</h3>
@@ -2241,7 +2218,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-panel" style="margin-top: 10px; padding: 1.2rem;">
+                    <div class="card-panel" style="margin-top: 20px; padding: 1.5rem;">
                         <h4 style="font-size: 0.8rem; margin-bottom: 1rem;"><i class="fas fa-comment-alt"></i>
                             COMENTARIOS Y OBSERVACIONES DE RECURSOS HUMANOS</h4>
                         <textarea id="audit-comments-hr" class="audit-textarea"
@@ -2250,11 +2227,11 @@
                 </div>
 
                 <div id="audit-env" class="audit-section-content" style="display: none;">
-                    <div class="card-panel" style="padding: 1.2rem;">
+                    <div class="card-panel">
                         <div class="panel-header"
                             style="display: flex; justify-content: space-between; align-items: center;">
                             <h3><i class="fas fa-cloud-sun"></i> 5. Factores del Entorno</h3>
-                            <div class="module-score-badge" id="score-environment">Puntos: 0.0 / 10</div>
+                            <div class="module-score-badge" id="score-env">Puntos: 0.0 / 10</div>
                         </div>
                         <div class="panel-body">
                             <div class="audit-table-container">
@@ -2273,7 +2250,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-panel" style="margin-top: 10px; padding: 1.2rem;">
+                    <div class="card-panel" style="margin-top: 20px; padding: 1.5rem;">
                         <h4 style="font-size: 0.8rem; margin-bottom: 1rem;"><i class="fas fa-comment-alt"></i>
                             COMENTARIOS Y OBSERVACIONES DEL ENTORNO</h4>
                         <textarea id="audit-comments-env" class="audit-textarea"
@@ -2283,8 +2260,8 @@
 
                 <!-- Tab: Scenarios -->
                 <div id="audit-scenarios" class="audit-section-content" style="display: none;">
-                    <div class="card-panel" style="padding: 1.2rem;">
-                        <div class="panel-header" style="margin-bottom: 1rem;">
+                    <div class="card-panel">
+                        <div class="panel-header" style="margin-bottom: 2rem;">
                             <h3><i class="fas fa-biohazard"></i> Matriz de Análisis de Escenarios de Riesgo</h3>
                             <p style="color: var(--text-muted); font-size: 0.8rem;">Evalúe la Probabilidad y el Impacto
                                 para cada escenario crítico identificado.</p>
@@ -2316,44 +2293,10 @@
                                     </thead>
                                     <tbody id="audit-items-scenarios"></tbody>
                                 </table>
-                                <!-- RISK MATRIX LEGEND -->
-                                <div
-                                    style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px;">
-                                    <div
-                                        style="background: rgba(0, 156, 189, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 156, 189, 0.1);">
-                                        <h5 style="font-size: 0.75rem; margin-bottom: 8px; color: #00558C;"><i
-                                                class="fas fa-dice"></i> PROBABILIDAD</h5>
-                                        <ul
-                                            style="font-size: 0.65rem; padding-left: 15px; margin: 0; color: #475569; line-height: 1.4;">
-                                            <li><strong>Histórico:</strong> Frecuencia de eventos.</li>
-                                            <li><strong>Amenaza:</strong> Intención.</li>
-                                            <li><strong>Vulnerab.:</strong> Debilidades.</li>
-                                        </ul>
-                                    </div>
-                                    <div
-                                        style="background: rgba(164, 204, 0, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(164, 204, 0, 0.1);">
-                                        <h5 style="font-size: 0.75rem; margin-bottom: 8px; color: #698200;"><i
-                                                class="fas fa-burst"></i> IMPACTO</h5>
-                                        <ul
-                                            style="font-size: 0.65rem; padding-left: 15px; margin: 0; color: #475569; line-height: 1.4;">
-                                            <li><strong>Humano:</strong> Personas | <strong>Operativo:</strong>
-                                                Continuidad
-                                                | <strong>Financ.:</strong> Costos | <strong>Reputac.:</strong> Marca |
-                                                <strong>Legal:</strong> Demandas
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div
-                                    style="margin-top: 10px; padding: 10px; background: var(--navy-black); color: white; border-radius: 6px; font-size: 0.7rem;">
-                                    <i class="fas fa-calculator"></i> <strong>Riesgo Final:</strong> Promedio
-                                    Probabilidades
-                                    x Máximo Impacto (1-25).
-                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="card-panel" style="margin-top: 10px; padding: 1.2rem;">
+                    <div class="card-panel" style="margin-top: 20px; padding: 1.5rem;">
                         <h4 style="font-size: 0.8rem; margin-bottom: 1rem;"><i class="fas fa-comment-alt"></i>
                             COMENTARIOS SOBRE ANÁLISIS DE ESCENARIOS</h4>
                         <textarea id="audit-comments-scenarios" class="audit-textarea"
@@ -2365,7 +2308,7 @@
                 <div id="audit-results" class="audit-section-content" style="display: none;">
                     <div style="display: grid; grid-template-columns: 350px 1fr; gap: 20px;">
                         <div class="card-panel"
-                            style="text-align: center; display: flex; flex-direction: column; justify-content: center; padding: 1.5rem;">
+                            style="text-align: center; display: flex; flex-direction: column; justify-content: center; padding: 2.5rem;">
                             <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">GLOBAL
                                 SECURITY MATURITY INDEX</h4>
                             <div id="smi-value"
@@ -2620,18 +2563,16 @@
 
     </main>
 
+    <!-- Modal Contractor Consolidation -->
     <div id="modal-contractor-hours" class="modal-overlay" style="display: none;">
-        <div class="modal-card" style="max-width: 600px;">
-            <div class="modal-header" style="background: var(--navy-black);">
-                <div style="display:flex; flex-direction:column;">
-                    <h3 style="margin:0">Consolidado Mensual de Contratistas</h3>
-                    <small id="contractor-report-month"
-                        style="opacity:0.8; font-size:0.75rem; color:var(--primary-teal)">Acumulado Total
-                        Histórico</small>
-                </div>
-                <button class="btn-close-modal" onclick="window.closeContractorModal()">&times;</button>
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Consolidado Mensual de Contratistas <span id="contractor-report-month"
+                        style="font-size:0.75rem; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius:4px; margin-left:10px; font-weight:600;"></span>
+                </h3>
+                <button class="btn-close-modal" onclick="closeContractorModal()">&times;</button>
             </div>
-            <div class="modal-body" id="contractor-consolidated-body" style="padding:0">
+            <div class="modal-body monitor-list" id="contractor-consolidated-body">
                 <!-- Content generated via JS -->
             </div>
         </div>
@@ -2749,7 +2690,45 @@
         </div>
     </div>
 
-
+    <!-- Edit Auth Modal -->
+    <div id="modal-edit-auth" class="modal-overlay" style="display: none;">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Autorización</h3>
+                <button class="btn-close-modal" onclick="closeEditAuthModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-auth-id">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label">ID / Cédula</label>
+                    <input type="text" id="edit-auth-id-num">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label">Beneficiario</label>
+                    <input type="text" id="edit-auth-name">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label">Empresa</label>
+                    <input type="text" id="edit-auth-company">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label">Autoriza</label>
+                    <input type="text" id="edit-auth-approver">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">Inicio</label>
+                        <input type="date" id="edit-auth-start">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Expira</label>
+                        <input type="date" id="edit-auth-end">
+                    </div>
+                </div>
+                <button class="btn-submit-action" onclick="saveAuthEdit()">GUARDAR CAMBIOS</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Edit Key Loan Modal -->
     <div id="modal-edit-key-loan" class="modal-overlay" style="display: none;">
@@ -3245,47 +3224,14 @@
                 <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Haga clic en el mapa para marcar la
                     UBICACIóN exacta.</p>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <button id="btn-picker-clear" class="btn-export" onclick="window.clearMapPickerPoints()"
-                        style="font-size: 0.7rem; background: var(--red-holcim); display: none;">BORRAR
+                    <button id="btn-picker-clear" class="btn-salida-corpo" onclick="clearMapPickerPoints()"
+                        style="padding: 5px 15px; margin: 0; width: auto; background: var(--red-holcim); color: white; display: none;">LIMPIAR
                         PUNTOS</button>
-                    <button id="btn-toggle-geo" class="btn-export" onclick="window.toggleGeoMode()"
-                        style="font-size: 0.7rem; background: var(--primary-teal); display: none;">MODO
-                        GEOMÉTRICO</button>
-                    <div id="picker-coords-display"
-                        style="font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--primary-teal);">
-                        [ - , - ]</div>
-                </div>
-
-                <!-- MODO GEOMÉTRICO (TRIGONOMETRÍA) -->
-                <div id="geometric-controls"
-                    style="display:none; margin-top:15px; padding:15px; background:var(--bg-light); border-radius:8px; border:1px solid var(--border-gray);">
-                    <h4 style="font-size:0.8rem; margin-bottom:10px; color:var(--navy-black);"><i
-                            class="fas fa-calculator"></i> Generación Geométrica</h4>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                        <div class="form-group" style="margin-bottom:0px">
-                            <label class="form-label" style="font-size:0.6rem">Lados (n)</label>
-                            <input type="number" id="geo-sides" value="4" min="3" max="20"
-                                style="height:32px; font-size:0.8rem">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0px">
-                            <label class="form-label" style="font-size:0.6rem">Radio (m)</label>
-                            <input type="number" id="geo-radius" value="50" min="1"
-                                style="height:32px; font-size:0.8rem">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0px">
-                            <label class="form-label" style="font-size:0.6rem">Azimut (°)</label>
-                            <input type="number" id="geo-azimuth" value="0" min="0" max="359"
-                                style="height:32px; font-size:0.8rem">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0px; display:flex; align-items:flex-end;">
-                            <button onclick="window.generateGeometricPolygon()" class="btn-submit-action"
-                                style="height:32px; font-size:0.7rem; margin:0; background:var(--navy-black);">GENERAR</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="picker-map"
-                    style="height: 400px; border-radius: 8px; border: 1px solid var(--border-gray); margin-top: 1rem;">
+                    <span id="picker-coords-display"
+                        style="font-family: monospace; font-size: 0.9rem; font-weight: 700; color: var(--primary-teal);">[
+                        - , - ]</span>
+                    <button class="btn-crear" onclick="confirmMapPickerSelection()"
+                        style="padding: 5px 15px; margin: 0; width: auto;">CONFIRMAR</button>
                 </div>
             </div>
         </div>
@@ -3777,41 +3723,7 @@
                 style="color:#e11d48; width:20px;"></i> Identificar Peligro</button>
         <div style="height:1px; background:#e2e8f0; margin:4px 0;"></div>
         <button onclick="window.handleMapContextClick('perimetro')" class="ctx-btn ctx-btn-highlight"><i
-                class="fas fa-draw-polygon" style="color:#f59e0b; width:20px;"></i> Mano Alzada (Manual)</button>
-        <button onclick="window.handleMapContextClick('perimetro_geo')" class="ctx-btn ctx-btn-highlight"><i
-                class="fas fa-calculator" style="color:#0ea5e9; width:20px;"></i> Perímetro Geométrico</button>
-    </div>
-
-    <!-- MODAL: Parámetros Perímetro Geométrico -->
-    <div id="modal-geo-perimeter-params" class="modal-overlay" style="display:none; z-index: 10001;">
-        <div class="modal-content" style="max-width: 400px;">
-            <div class="panel-header"
-                style="background:var(--navy-black); display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="color:white; margin:0;"><i class="fas fa-calculator"></i> Configurar Perímetro</h3>
-                <button onclick="document.getElementById('modal-geo-perimeter-params').style.display='none'"
-                    style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
-            </div>
-            <div class="panel-body">
-                <div class="form-group">
-                    <label class="form-label">Número de Lados (n)</label>
-                    <input type="number" id="pgeo-sides" value="3" min="3" max="25">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Radio del Polígono (metros)</label>
-                    <input type="number" id="pgeo-radius" value="50" min="1">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Rotación / Azimut (grados)</label>
-                    <input type="number" id="pgeo-azimuth" value="0" min="0" max="359">
-                </div>
-                <div style="display:flex; gap:10px; margin-top:1.5rem;">
-                    <button class="btn-salida-corpo" style="flex:1;"
-                        onclick="document.getElementById('modal-geo-perimeter-params').style.display='none'">CANCELAR</button>
-                    <button class="btn-submit-action" style="flex:1; background:var(--primary-teal);"
-                        onclick="window.confirmGeoPerimeter()"><i class="fas fa-check"></i> GENERAR</button>
-                </div>
-            </div>
-        </div>
+                class="fas fa-draw-polygon" style="color:#f59e0b; width:20px;"></i> Dibujar Perímetro</button>
     </div>
 
     <!-- MODAL: Perimeter Note -->
@@ -4129,39 +4041,6 @@
                     </button>
                     <p style="font-size:0.7rem; color:var(--text-muted); margin-top:0.5rem;">Asegúrese de dar permisos
                         de cámara.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: EVIDENCIA AUDITORÍA -->
-    <div id="modal-audit-evidence" class="modal-overlay">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header" style="background: var(--navy-black);">
-                <h3><i class="fas fa-camera"></i> Evidencia y Hallazgos</h3>
-                <button class="btn-close-modal"
-                    onclick="document.getElementById('modal-audit-evidence').style.display='none'">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 20px;">
-                <div id="audit-evidence-item-info"
-                    style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-                    <strong id="evidence-item-label" style="display:block; font-size:1rem;">Item</strong>
-                    <span id="evidence-item-id" style="font-size:0.7rem; color:var(--text-muted);">ID</span>
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <label class="form-label">Cargar Nueva Evidencia (Imagen/Documento)</label>
-                    <div style="display:flex; gap:10px;">
-                        <input type="file" id="audit-evidence-input" style="font-size:0.8rem;"
-                            accept="image/*,.pdf,.doc,.docx">
-                        <button onclick="window.uploadAuditEvidence()" class="btn-submit-action"
-                            style="width:auto; margin:0; padding:0 20px; background:var(--primary-teal);">SUBIR</button>
-                    </div>
-                </div>
-
-                <div id="audit-evidence-list"
-                    style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:15px; max-height:400px; overflow-y:auto;">
-                    <!-- Evidencias se cargan aquí -->
                 </div>
             </div>
         </div>
